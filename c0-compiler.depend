@@ -35,7 +35,7 @@
 1515182047 source:c:\users\tangjz2\desktop\c0-compiler\syntax.cpp
 	"syntax.h"
 
-1515142310 source:c:\users\tangjz2\desktop\c0-compiler\table.cpp
+1515338828 source:c:\users\tangjz2\desktop\c0-compiler\table.cpp
 	"table.h"
 
 1515092852 c:\users\tangjz2\desktop\c0-compiler\table.h
@@ -53,7 +53,7 @@
 	"table.h"
 	"pseudo.h"
 
-1515151347 source:c:\users\tangjz2\desktop\c0-compiler\pseudo.cpp
+1515338705 source:c:\users\tangjz2\desktop\c0-compiler\pseudo.cpp
 	"pseudo.h"
 
 1515151096 source:c:\users\tangjz2\desktop\c0-compiler\transform.cpp

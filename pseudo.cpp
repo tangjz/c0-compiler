@@ -97,11 +97,19 @@ int arithmeticOpeation(SYMBOL oper, int leftIndex, int rightIndex, int destinati
         strcpy(cur.lft, "0");
     } else {
         assert(leftIndex >= 0 && leftIndex < symbolCount && hasValue(leftIndex));
-        strcpy(cur.lft, symbolTable[leftIndex].name);
+//        if(symbolTable[leftIndex].kind == CONST) {
+//            sprintf(cur.lft, "%d", symbolTable[leftIndex].value);
+//        } else {
+            strcpy(cur.lft, symbolTable[leftIndex].name);
+//        }
     }
     if(oper != ASSIGNSY) {
         assert(rightIndex >= 0 && rightIndex < symbolCount && hasValue(rightIndex));
-        strcpy(cur.rht, symbolTable[rightIndex].name);
+//        if(symbolTable[rightIndex].kind == CONST) {
+//            sprintf(cur.rht, "%d", symbolTable[rightIndex].value);
+//        } else {
+            strcpy(cur.rht, symbolTable[rightIndex].name);
+//        }
     } else {
         strcpy(cur.rht, "");
     }
@@ -183,12 +191,20 @@ int branchLabel(SYMBOL oper, int leftIndex, int rightIndex, int falseLabelIndex)
         default: assert(oper == NOTSY); strcpy(cur.op, "beq");
     }
     assert(leftIndex >= 0 && leftIndex < symbolCount && hasValue(leftIndex));
-    strcpy(cur.lft, symbolTable[leftIndex].name); // optional
+//    if(symbolTable[leftIndex].kind == CONST) {
+//        sprintf(cur.lft, "%d", symbolTable[leftIndex].value);
+//    } else {
+        strcpy(cur.lft, symbolTable[leftIndex].name);
+//    }
     if(oper != NOTSY) {
         assert(rightIndex >= 0 && rightIndex < symbolCount && hasValue(rightIndex));
-        strcpy(cur.rht, symbolTable[rightIndex].name);
+//        if(symbolTable[rightIndex].kind == CONST) {
+//            sprintf(cur.rht, "%d", symbolTable[rightIndex].value);
+//        } else {
+            strcpy(cur.rht, symbolTable[rightIndex].name);
+//        }
     } else {
-        strcpy(cur.rht, "0"); // optional
+        strcpy(cur.rht, "0");
     }
     assert(falseLabelIndex >= 0 && falseLabelIndex < labelCount);
     strcpy(cur.dst, labelTable[falseLabelIndex]);
@@ -326,9 +342,17 @@ int storeArrayElement(int arrayIndex, int offsetIndex, int sourceIndex) { // []=
     FOURCODE &cur = codeList[codeCount];
     strcpy(cur.op, "[]=");
     assert(sourceIndex >= 0 && sourceIndex < symbolCount && hasValue(sourceIndex));
-    strcpy(cur.lft, symbolTable[sourceIndex].name);
+//    if(symbolTable[sourceIndex].kind == CONST) {
+//        sprintf(cur.lft, "%d", symbolTable[sourceIndex].value);
+//    } else {
+        strcpy(cur.lft, symbolTable[sourceIndex].name);
+//    }
     assert(offsetIndex >= 0 && offsetIndex < symbolCount && hasValue(offsetIndex));
-    strcpy(cur.rht, symbolTable[offsetIndex].name);
+//    if(symbolTable[offsetIndex].kind == CONST) {
+//        sprintf(cur.rht, "%d", symbolTable[offsetIndex].value);
+//    } else {
+        strcpy(cur.rht, symbolTable[offsetIndex].name);
+//    }
     assert(arrayIndex >= 0 && arrayIndex < symbolCount && symbolTable[arrayIndex].kind == ARRAY);
     strcpy(cur.dst, symbolTable[arrayIndex].name);
 #ifdef FOURCODE_DEBUG
@@ -345,7 +369,11 @@ int loadArrayElement(int arrayIndex, int offsetIndex, int destinationIndex) { //
     assert(arrayIndex >= 0 && arrayIndex < symbolCount && symbolTable[arrayIndex].kind == ARRAY);
     strcpy(cur.lft, symbolTable[arrayIndex].name);
     assert(offsetIndex >= 0 && offsetIndex < symbolCount && hasValue(offsetIndex));
-    strcpy(cur.rht, symbolTable[offsetIndex].name);
+//    if(symbolTable[offsetIndex].kind == CONST) {
+//        sprintf(cur.rht, "%d", symbolTable[offsetIndex].value);
+//    } else {
+        strcpy(cur.rht, symbolTable[offsetIndex].name);
+//    }
     assert(destinationIndex >= 0 && destinationIndex < symbolCount && isVariable(destinationIndex));
     strcpy(cur.dst, symbolTable[destinationIndex].name);
 #ifdef FOURCODE_DEBUG
@@ -361,7 +389,11 @@ int pushParameter(int index) { // pushPara, (type), name,
     strcpy(cur.op, "pushPara");
     assert(index >= 0 && index < symbolCount && hasValue(index));
     strcpy(cur.lft, symbolTable[index].type == INT ? "int" : "char"); // optional
-    strcpy(cur.rht, symbolTable[index].name);
+//    if(symbolTable[index].kind == CONST) {
+//        sprintf(cur.rht, "%d", symbolTable[index].value);
+//    } else {
+        strcpy(cur.rht, symbolTable[index].name);
+//    }
     strcpy(cur.dst, ""); // optional
 #ifdef FOURCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
