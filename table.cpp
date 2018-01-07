@@ -50,6 +50,7 @@ int insertSymbol(const char *name, KIND kind, TYPE type, bool isGlobal, int valu
     int realIndex = findSymbol(name);
     assert(realIndex == -1 || (symbolTable[realIndex].isGlobal && !isGlobal));
     if(symbolCount >= TABLE_SIZE) { // fatal error
+        puts("Symbol table is full.");
         error(0);
         return -1;
     }

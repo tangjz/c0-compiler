@@ -43,8 +43,7 @@ void catToken() {
     if(tokenTail - token == TOKEN_MAX) {
         if(!tokenOverlong) {
             tokenOverlong = true;
-            puts("Token length limitation exceeded (overlong part would be omitted)."); // should be modified to error messages
-            errorCount++;
+            printf("Warning at Line %d, Column %d: Token length limitation exceeded (overlong part would be omitted).\n", currentFrontLineIndex, currentFrontColumnIndex);
         }
     } else {
         *(tokenTail++) = ch;
@@ -82,7 +81,7 @@ unsigned getNumber() {
 		val = (val << 3) + (val << 1) + *ptr - '0';
 		if(val < pre) { // overflow
             puts("Number too large."); // should be modified to error messages
-            errorCount++;
+            error(0);
             return UINT_MAX;
 		}
 	}
@@ -112,13 +111,12 @@ void getSymbol() {
 		} // else number (or wrong identifier) is collected
 		if(hasLetter) {
             puts("Identifier can't start with digits."); // should be modified to error messages
-            errorCount++;
-            symbol = IDSY;
+            error(0);
+            return;
 		} else {
             number = getNumber();
             if(token[0] == '0' && token[1] != '\0') { // need to add a variable to avoid multiple error messages (number too large)
-                puts("Leading zero of constant integer occurred."); // should be modified to error messages
-                errorCount++;
+                printf("Warning at Line %d, Column %d: Leading zero of constant integer occurred.\n", currentFrontLineIndex, currentFrontColumnIndex);
             }
             symbol = NUMSY;
 		}
@@ -130,25 +128,28 @@ void getSymbol() {
             if(ch != '\'') {
                 for( ; !isEof() && ch != '\'' && ch != '\n'; getChar());
                 if(ch == '\'') {
-                    puts("Multi-characters occurred between two matched single quotes."); // should be modified to error messages
-                    errorCount++;
+                    printf("Warning at Line %d, Column %d: Multi-characters occurred between two matched single quotes (overlong part would be omitted).\n", currentFrontLineIndex, currentFrontColumnIndex);
                 } else {
                     puts("There exists one single quote mismatched."); // should be modified to error messages
-                    errorCount++;
+                    error(0);
+                    return;
                 }
             }
         } else if(ch != '\'') { // should be modified to error messages
             for( ; !isEof() && ch != '\'' && ch != '\n'; getChar());
             if(ch == '\'') {
                 puts("Unknown character(s) occurred between two matched single quotes."); // should be modified to error messages
-                errorCount++;
+                error(0);
+                return;
             } else {
                 puts("There exists one single quote mismatched."); // should be modified to error messages
-                errorCount++;
+                error(0);
+                return;
             }
         } else { // ch == '\'' // no character
             puts("No character occurred between two matched single quotes."); // should be modified to error messages
-            errorCount++;
+            error(0);
+            return;
         }
         if(ch == '\'' || ch == '\n')
             getChar();
@@ -163,10 +164,12 @@ void getSymbol() {
             for( ; !isEof() && ch != '\"' && ch != '\n'; getChar());
             if(ch == '\"') {
                 puts("Unknown character(s) occurred between two matched double quotes."); // should be modified to error messages
-                errorCount++;
+                error(0);
+                return;
             } else {
                 puts("There exists one double quote mismatched."); // should be modified to error messages
-                errorCount++;
+                error(0);
+                return;
             }
         }
         if(ch == '\"' || ch == '\n')
@@ -185,8 +188,9 @@ void getSymbol() {
 		if(ch == '=') {
             getChar();
 		} else {
-            puts("expect \'=\' after \'!\'"); // should be modified to error messages
-            errorCount++;
+		    puts("There should be an assignment."); // should be modified to error messages
+		    error(0);
+            return;
 		}
 		symbol = NEQSY;
 	} else if(ch == '<') {
@@ -213,7 +217,9 @@ void getSymbol() {
 				break;
 			}
 		if(!symbol && !isEof()) {
-			error();
+            puts("Unknown symbol detected.");
+			error(0);
+			return;
 		}
 		getChar();
 	}
