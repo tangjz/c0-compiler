@@ -187,6 +187,9 @@ void convertMIPS() {
         printRegReg("add", $gp, $sp, $zero);
     }
     int realLastSymbolIndex = lastSymbolIndex;
+#ifdef DEAD_CODE_ELIMINATION
+    int currentBlockIndex = 0;
+#endif
     for(int codeIndex = 0, functionIndex = -1; codeIndex < codeCount; ++codeIndex) {
         QUADCODE &cur = codeList[codeIndex];
 #ifdef TRANSFORM_DEBUG
@@ -205,6 +208,11 @@ void convertMIPS() {
 #endif
         if(strncmp(cur.op, "def", 3) == 0 || strcmp(cur.op, "pushPara") == 0)
             continue;
+#ifdef DEAD_CODE_ELIMINATION
+        for( ; currentBlockIndex < blockCount && codeIndex >= blockStartIndex[currentBlockIndex + 1]; ++currentBlockIndex);
+        if(!blockReachable[currentBlockIndex])
+            continue;
+#endif
         int index = -1, offset = 0, $rs = $zero, $rt = $zero, $rd = $zero;
         bool hasImmediate = false;
         if(strcmp(cur.op, "add") == 0 || strcmp(cur.op, "sub") == 0) { // add/sub, left, right, destination
@@ -440,7 +448,7 @@ void convertMIPS() {
             }
         } else if(strcmp(cur.op, "label") == 0) { // label, labelString, ,
             printLabel(cur.lft);
-        } else if(strncmp(cur.op, "j", 1) == 0) { // j/jal, , , labelString
+        } else if(strncmp(cur.op, "j", 1) == 0) { // j, , , labelString
             printJump(cur.op, cur.dst);
         } else if(strncmp(cur.op, "b", 1) == 0) { // bne/beq/bge/bgt/ble/blt, left, right, labelString
             if(isLetter(cur.lft[0]) && ((index = findSymbol(cur.lft)) == -1 || symbolTable[index].kind != CONST)) {
@@ -561,9 +569,11 @@ void convertMIPS() {
             int calleeStartLabel = findFunctionLabel(calleeIndex, 1);
             int temporaryCount;
             sscanf(cur.rht, "%d", &temporaryCount);
-            printRegImm("sub", $sp, $sp, temporaryCount * BYTE_PER_INT);
+            if(temporaryCount)
+                printRegImm("sub", $sp, $sp, temporaryCount * BYTE_PER_INT);
             printJump("jal", labelTable[calleeStartLabel]);
-            printRegImm("add", $sp, $sp, temporaryCount * BYTE_PER_INT);
+            if(temporaryCount)
+                printRegImm("add", $sp, $sp, temporaryCount * BYTE_PER_INT);
             if(strcmp(cur.dst, "") != 0) {
                 index = findSymbol(cur.dst);
                 if(index == -1) { // temporary variable

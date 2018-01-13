@@ -26,6 +26,7 @@ const int BYTE_PER_CHAR = 1;
 // #define SEMANTIC_DEBUG // to fout
 // #define FOURCODE_DEBUG // to ferr
 #define TRANSFORM_DEBUG // to fout
+#define OPTIMIZE_DEBUG // to ferr
 
 // switches for MARS
 // MARS -> Settings -> Popup dialog for input syscalls: ON
@@ -34,6 +35,7 @@ const int BYTE_PER_CHAR = 1;
 #define OUTPUT_EOLN
 
 // switches for optimization
+#define OPTIMIZATION
 //#define COMMON_SUBEXPRESSION_ELIMINATION // compulsory
 //#define CONSTANT_FOLDING_PROPAGAION
 //#define VARIABLE_COPY_PROPAGAION // compulsory

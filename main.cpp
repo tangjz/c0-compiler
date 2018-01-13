@@ -3,6 +3,7 @@
 #include "scanner.h"
 #include "syntax.h"
 #include "pseudo.h"
+#include "optimize.h"
 #include "transfrom.h"
 #include <io.h>
 
@@ -54,6 +55,12 @@ int main() {
     puts("Complication Finished.");
 #ifdef FOURCODE_DEBUG
     printCodeList(); // print to fout
+#endif
+#ifdef OPTIMIZATION
+    divideBlocks();
+    #ifdef COMMON_SUBEXPRESSION_ELIMINATION
+        commonSubexpressionElimination();
+    #endif
 #endif
     convertMIPS();
     return 0;

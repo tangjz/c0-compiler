@@ -14,6 +14,7 @@ extern int codeCount, labelCount;
 extern QUADCODE codeList[CODE_MAX];
 extern char labelTable[TABLE_SIZE][TOKEN_MAX];
 
+extern int findLabel(char token[TOKEN_MAX]);
 extern int findFunctionLabel(int functionIndex, int order);
 extern int generateLabel(SYMBOL type, int order, int typeCount, int superLabel = -1);
 extern int generateLabel(int functionIndex = -1, int order = 1);

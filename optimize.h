@@ -1,5 +1,5 @@
-#ifndef OPTMIZE_H_INCLUDED
-#define OPTMIZE_H_INCLUDED
+#ifndef OPTIMIZE_H_INCLUDED
+#define OPTIMIZE_H_INCLUDED
 
 #include "common.h"
 #include "table.h"
@@ -13,4 +13,4 @@ extern bool hasConfliction(int index1, int index2); // check for global/local va
 //TODO: global register allocation should be implemented in transform.cpp
 //TODO: peephole optimization also ...
 
-#endif // OPTMIZE_H_INCLUDED
+#endif // OPTIMIZE_H_INCLUDED

@@ -102,11 +102,11 @@ void program() {
         // note user to check the end of codes
     }
     setLabel(globalEndLabel);
-    // feedback to reviseCodeIndex: j globalEndLabel -> jal mainFunctionStartLabel
-    int mainIndex = findSymbol("main");
-    int mainStartLabel = findFunctionLabel(mainIndex, 1);
-    strcpy(codeList[reviseCodeIndex].op, "jal");
-    strcpy(codeList[reviseCodeIndex].dst, labelTable[mainStartLabel]);
+    // feedback to reviseCodeIndex: j globalEndLabel -> call main
+    strcpy(codeList[reviseCodeIndex].op, "call");
+    strcpy(codeList[reviseCodeIndex].lft, "main");
+    sprintf(codeList[reviseCodeIndex].rht, "%d", 0);
+    strcpy(codeList[reviseCodeIndex].dst, "");
 #ifdef SYNTAX_DEBUG
     fprintf(ferr, "There is a program from (line %d, column %d) to (line %d, column %d)\n", startLineIndex, startColumnIndex, lastEndLineIndex, lastEndColumnIndex);
 #endif
