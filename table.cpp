@@ -18,6 +18,13 @@ int checkingIndex = -1;
 bool checkingResult = false;
 SYMBOLTABLE symbolTable[TABLE_SIZE];
 
+bool isVariable(int symbolIndex) {
+    return symbolTable[symbolIndex].kind == VARIABLE || symbolTable[symbolIndex].kind == PARAMETER || symbolTable[symbolIndex].kind == TEMPORARY;
+}
+bool hasValue(int symbolIndex) {
+    return symbolTable[symbolIndex].kind != ARRAY && symbolTable[symbolIndex].kind != FUNCTION
+        && symbolTable[symbolIndex].type != VOID;
+}
 int findSymbol(const char *name) {
     int index;
     for(index = lastSymbolIndex; index >= 0; index = symbolTable[index].preIndex)

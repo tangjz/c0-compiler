@@ -1,7 +1,7 @@
 #include "transfrom.h"
 
 //int codeCount;
-//struct FOURCODE {
+//struct QUADCODE {
 //    char op[OPER_MAX], lft[TOKEN_MAX], rht[TOKEN_MAX], dst[TOKEN_MAX];
 //    // lft, rht may be identifier or number, dst must be identifier
 //} codeList[CODE_MAX];
@@ -15,6 +15,7 @@ const int $zero = 0, $v0 = 2, $a0 = 4, $gp = 28, $sp = 29, $ra = 31;
 const int localRegLow = 8, localRegUpp = 25;
 bool regAvailable[REG_MAX];
 
+//TODO: global register allocation should be implemented in here
 int newReg() {
     for(int id = localRegLow; id <= localRegUpp; ++id)
         if(regAvailable[id]) {
@@ -31,6 +32,7 @@ void freeReg(int id) {
     }
 }
 
+// TODO: peephole optimization also should be implemented in here
 void printReg(const char *op, int rd) { // mflo
     assert(strcmp(op, "mflo") == 0);
     fprintf(fout, "\t" "%s %s" "\n", op, regName[rd]);
@@ -122,7 +124,7 @@ void convertMIPS() {
     // step 1. convert string and save them in data segment
     fprintf(fout, ".data" "\n");
     for(int index = 0; index < codeCount; ++index) {
-        FOURCODE &cur = codeList[index];
+        QUADCODE &cur = codeList[index];
         if(strcmp(cur.op, "syscall") == 0 && strcmp(cur.lft, "4") == 0) {
             int pos;
             for(pos = stringCount; pos; --pos)
@@ -186,7 +188,7 @@ void convertMIPS() {
     }
     int realLastSymbolIndex = lastSymbolIndex;
     for(int codeIndex = 0, functionIndex = -1; codeIndex < codeCount; ++codeIndex) {
-        FOURCODE &cur = codeList[codeIndex];
+        QUADCODE &cur = codeList[codeIndex];
 #ifdef TRANSFORM_DEBUG
         if(strcmp(cur.op, "syscall") == 0 && strcmp(cur.lft, "4") == 0) {
             fprintf(fout, "#%d: %s, %s, \"", codeIndex, cur.op, cur.lft);

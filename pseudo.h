@@ -5,13 +5,13 @@
 #include "table.h"
 #include "scanner.h"
 
-struct FOURCODE {
+struct QUADCODE {
     char op[OPER_MAX], lft[TOKEN_MAX], rht[TOKEN_MAX], dst[TOKEN_MAX];
     // lft, rht may be identifier or number, dst must be identifier
 };
 
 extern int codeCount, labelCount;
-extern FOURCODE codeList[CODE_MAX];
+extern QUADCODE codeList[CODE_MAX];
 extern char labelTable[TABLE_SIZE][TOKEN_MAX];
 
 extern int findFunctionLabel(int functionIndex, int order);

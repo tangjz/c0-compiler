@@ -1,12 +1,12 @@
 #include "pseudo.h"
 
-//struct FOURCODE {
+//struct QUADCODE {
 //    char op[OPER_MAX], lft[TOKEN_MAX], rht[TOKEN_MAX], dst[TOKEN_MAX];
 //    // lft, rht may be identifier or number, dst must be identifier
 //};
 
 int codeCount = 0, labelCount = 0;
-FOURCODE codeList[CODE_MAX];
+QUADCODE codeList[CODE_MAX];
 char labelTable[TABLE_SIZE][TOKEN_MAX];
 
 bool checkLabelLimit() {
@@ -24,13 +24,6 @@ bool checkCodeLimit() {
         return false;
     }
     return true;
-}
-bool isVariable(int symbolIndex) {
-    return symbolTable[symbolIndex].kind == VARIABLE || symbolTable[symbolIndex].kind == PARAMETER || symbolTable[symbolIndex].kind == TEMPORARY;
-}
-bool hasValue(int symbolIndex) {
-    return symbolTable[symbolIndex].kind != ARRAY && symbolTable[symbolIndex].kind != FUNCTION
-        && symbolTable[symbolIndex].type != VOID;
 }
 
 int findLabel(char token[TOKEN_MAX]) {
@@ -84,7 +77,7 @@ int generateLabel(int functionIndex, int order) {
 int arithmeticOpeation(SYMBOL oper, int leftIndex, int rightIndex, int destinationIndex) { // operator, left, right, destination
     if(!checkCodeLimit())
         return -1;
-    FOURCODE &cur = codeList[codeCount];
+    QUADCODE &cur = codeList[codeCount];
     switch(oper) {
         case ASSIGNSY: strcpy(cur.op, "="); break;
         case PLUSSY: strcpy(cur.op, "add"); break;
@@ -124,7 +117,7 @@ int arithmeticOpeation(SYMBOL oper, int leftIndex, int rightIndex, int destinati
 int defineElement(int index) { // def kind, type, value, name
     if(!checkCodeLimit())
         return -1;
-    FOURCODE &cur = codeList[codeCount];
+    QUADCODE &cur = codeList[codeCount];
     assert(index >= 0 && index < symbolCount && symbolTable[index].kind != FUNCTION);
     switch(symbolTable[index].kind) {
         case CONST: strcpy(cur.op, "defConstant"); break;
@@ -150,7 +143,7 @@ int defineElement(int index) { // def kind, type, value, name
 int setLabel(int index) { // label, labelString, ,
     if(!checkCodeLimit())
         return -1;
-    FOURCODE &cur = codeList[codeCount];
+    QUADCODE &cur = codeList[codeCount];
     strcpy(cur.op, "label");
     assert(index >= 0 && index < labelCount);
     strcpy(cur.lft, labelTable[index]);
@@ -165,7 +158,7 @@ int setLabel(int index) { // label, labelString, ,
 int jumpLabel(int index) { // j, , , labelString
     if(!checkCodeLimit())
         return -1;
-    FOURCODE &cur = codeList[codeCount];
+    QUADCODE &cur = codeList[codeCount];
     strcpy(cur.op, "j");
     strcpy(cur.lft, ""); // optional
     strcpy(cur.rht, ""); // optional
@@ -180,7 +173,7 @@ int jumpLabel(int index) { // j, , , labelString
 int branchLabel(SYMBOL oper, int leftIndex, int rightIndex, int falseLabelIndex) { // branchOperator, left, right, falseLabel
     if(!checkCodeLimit())
         return -1;
-    FOURCODE &cur = codeList[codeCount];
+    QUADCODE &cur = codeList[codeCount];
     switch(oper) {
         case EQSY: strcpy(cur.op, "bne"); break;
         case NEQSY: strcpy(cur.op, "beq"); break;
@@ -217,7 +210,7 @@ int branchLabel(SYMBOL oper, int leftIndex, int rightIndex, int falseLabelIndex)
 int startOfFunction(int functionIndex) { // function, name, type,
     if(!checkCodeLimit())
         return -1;
-    FOURCODE &cur = codeList[codeCount];
+    QUADCODE &cur = codeList[codeCount];
     strcpy(cur.op, "function");
     assert(functionIndex >= 0 && functionIndex < symbolCount && symbolTable[functionIndex].kind == FUNCTION);
     strcpy(cur.lft, symbolTable[functionIndex].name);
@@ -232,7 +225,7 @@ int startOfFunction(int functionIndex) { // function, name, type,
 int endOfFunction(int functionIndex) { // endFunction, name, type,
     if(!checkCodeLimit())
         return -1;
-    FOURCODE &cur = codeList[codeCount];
+    QUADCODE &cur = codeList[codeCount];
     strcpy(cur.op, "endFunction");
     assert(functionIndex >= 0 && functionIndex < symbolCount && symbolTable[functionIndex].kind == FUNCTION);
     strcpy(cur.lft, symbolTable[functionIndex].name);
@@ -247,7 +240,7 @@ int endOfFunction(int functionIndex) { // endFunction, name, type,
 int sysCall(int type, int src, int dst) { // syscall, serviceNumber, source, destination
     if(!checkCodeLimit())
         return -1;
-    FOURCODE &cur = codeList[codeCount];
+    QUADCODE &cur = codeList[codeCount];
     strcpy(cur.op, "syscall");
     sprintf(cur.lft, "%d", type);
     if(type == 4) { // string
@@ -286,7 +279,7 @@ int sysCall(int type, int src, int dst) { // syscall, serviceNumber, source, des
 int userCall(int calleeIndex, int returnIndex) { // call, function, temporaryCount, result
     if(!checkCodeLimit())
         return -1;
-    FOURCODE &cur = codeList[codeCount];
+    QUADCODE &cur = codeList[codeCount];
     strcpy(cur.op, "call");
     assert(calleeIndex >= 0 && calleeIndex < symbolCount && symbolTable[calleeIndex].kind == FUNCTION);
     strcpy(cur.lft, symbolTable[calleeIndex].name);
@@ -306,7 +299,7 @@ int userCall(int calleeIndex, int returnIndex) { // call, function, temporaryCou
 int userReturn(int returnIndex) { // return, result, ,
     if(!checkCodeLimit())
         return -1;
-    FOURCODE &cur = codeList[codeCount];
+    QUADCODE &cur = codeList[codeCount];
     strcpy(cur.op, "return");
     if(returnIndex >= 0) {
         assert(returnIndex < symbolCount && isVariable(returnIndex));
@@ -325,7 +318,7 @@ int userReturn(int returnIndex) { // return, result, ,
 int storeImmediate(int index, int value) { // =v, value, , variable
     if(!checkCodeLimit())
         return -1;
-    FOURCODE &cur = codeList[codeCount];
+    QUADCODE &cur = codeList[codeCount];
     strcpy(cur.op, "=");
     sprintf(cur.lft, "%d", value);
     assert(index >= 0 && index < symbolCount && isVariable(index));
@@ -339,7 +332,7 @@ int storeImmediate(int index, int value) { // =v, value, , variable
 int storeArrayElement(int arrayIndex, int offsetIndex, int sourceIndex) { // []=, source, offset, array
     if(!checkCodeLimit())
         return -1;
-    FOURCODE &cur = codeList[codeCount];
+    QUADCODE &cur = codeList[codeCount];
     strcpy(cur.op, "[]=");
     assert(sourceIndex >= 0 && sourceIndex < symbolCount && hasValue(sourceIndex));
 //    if(symbolTable[sourceIndex].kind == CONST) {
@@ -364,7 +357,7 @@ int storeArrayElement(int arrayIndex, int offsetIndex, int sourceIndex) { // []=
 int loadArrayElement(int arrayIndex, int offsetIndex, int destinationIndex) { // =[], array, offset, destination
     if(!checkCodeLimit())
         return -1;
-    FOURCODE &cur = codeList[codeCount];
+    QUADCODE &cur = codeList[codeCount];
     strcpy(cur.op, "=[]");
     assert(arrayIndex >= 0 && arrayIndex < symbolCount && symbolTable[arrayIndex].kind == ARRAY);
     strcpy(cur.lft, symbolTable[arrayIndex].name);
@@ -385,7 +378,7 @@ int loadArrayElement(int arrayIndex, int offsetIndex, int destinationIndex) { //
 int pushParameter(int index) { // pushPara, (type), name,
     if(!checkCodeLimit())
         return -1;
-    FOURCODE &cur = codeList[codeCount];
+    QUADCODE &cur = codeList[codeCount];
     strcpy(cur.op, "pushPara");
     assert(index >= 0 && index < symbolCount && hasValue(index));
     strcpy(cur.lft, symbolTable[index].type == INT ? "int" : "char"); // optional
@@ -403,7 +396,7 @@ int pushParameter(int index) { // pushPara, (type), name,
 
 void printCodeList() {
     for(int index = 0; index < codeCount; ++index) {
-        FOURCODE &cur = codeList[index];
+        QUADCODE &cur = codeList[index];
         if(strcmp(cur.op, "syscall") == 0 && strcmp(cur.lft, "4") == 0) {
             fprintf(fout, "#%d: %s, %s, \"", index, cur.op, cur.lft);
             for(char *ptr = cur.rht; *ptr; ++ptr) {

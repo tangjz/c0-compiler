@@ -23,6 +23,8 @@ extern int checkingIndex;
 extern bool checkingResult;
 extern SYMBOLTABLE symbolTable[TABLE_SIZE];
 
+extern bool isVariable(int symbolIndex);
+extern bool hasValue(int symbolIndex);
 extern int findSymbol(const char *name);
 extern int insertSymbol(const char *name, KIND kind = VARIABLE, TYPE type = VOID, bool isGlobal = false, int value = 0);
 extern int generateTemporarySymbol(TYPE type);

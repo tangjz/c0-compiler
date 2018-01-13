@@ -6,18 +6,19 @@ using namespace std;
 
 extern FILE *fin, *fout, *ferr;
 
-#define TOKEN_MAX   255 // limit for string
-#define BUF_SIZE    2047 // limit for each line
-#define ERROR_MAX   101
-#define TABLE_SIZE  65535
-#define ARRAY_MAX   1048575
-#define OPER_MAX    31 // limit for operator length
-#define CODE_MAX    65535
-#define REG_MAX     32
-#define OFFSET_MAX  32767
+const int TOKEN_MAX = 255; // limit for string
+const int BUF_SIZE = 2047; // limit for each line
+const int ERROR_MAX = 101;
+const int TABLE_SIZE = 65535;
+const int ARRAY_MAX = 1048575;
+const int OPER_MAX = 31; // limit for operator length
+const int CODE_MAX = 65535;
+const int REG_MAX = 32;
+const int OFFSET_MAX = 32767;
+const int BLOCK_MAX = 2047; // limit for code blocks (depend on call/jump/branch)
 
-#define BYTE_PER_INT    4
-#define BYTE_PER_CHAR   1
+const int BYTE_PER_INT = 4;
+const int BYTE_PER_CHAR = 1;
 
 // switches for debugging
 // #define SCANNER_DEBUG // to fout
