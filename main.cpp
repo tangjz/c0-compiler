@@ -53,14 +53,14 @@ int main() {
         return -1;
     }
     puts("Complication Finished.");
-#ifdef FOURCODE_DEBUG
-    printCodeList(); // print to fout
-#endif
 #ifdef OPTIMIZATION
     divideBlocks();
     #ifdef COMMON_SUBEXPRESSION_ELIMINATION
         commonSubexpressionElimination();
     #endif
+#endif
+#ifdef FOURCODE_OUTPUT
+    printCodeList(); // print to fout
 #endif
     convertMIPS();
     return 0;

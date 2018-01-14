@@ -108,7 +108,7 @@ void printSyscall() {
 int symbolOffset[TABLE_SIZE]; // offset from $gp or $sp
 int stringCount, stringIndex[CODE_MAX];
 
-bool isLetter(char ch) {
+static bool isLetter(char ch) {
 	return ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
 }
 int getTemporaryIndex(const char *token) {

@@ -23,7 +23,7 @@ extern int generateLabel(int functionIndex = -1, int order = 1);
 extern int arithmeticOpeation(SYMBOL oper, int leftIndex, int rightIndex, int destinationIndex); // operator, left, right, destination
 extern int defineElement(int index); // def kind, type, value, name
 extern int setLabel(int index); // label, labelString, ,
-extern int jumpLabel(int index); // j (or jal), , , labelString
+extern int jumpLabel(int index); // j, , , labelString
 extern int branchLabel(SYMBOL oper, int leftIndex, int rightIndex, int falseLabelIndex); // branchOperator, left, right, falseLabel
 extern int startOfFunction(int functionIndex); // function, name, type,
 extern int endOfFunction(int functionIndex); // endFunction, name, type,

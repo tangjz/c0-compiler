@@ -123,11 +123,15 @@ void revokeTemporarySymbol(int index) {
 void formatterTemporarySymbol(int &index, TYPE type) {
     if(symbolTable[index].kind != TEMPORARY) {
         int index2 = generateTemporarySymbol(type);
-//        if(symbolTable[index].kind == CONST) {
-//            storeImmediate(index2, symbolTable[index].value);
-//        } else {
+#ifdef CONSTANT_EXPRESS
+        if(symbolTable[index].kind == CONST) {
+            storeImmediate(index2, symbolTable[index].value);
+        } else {
+#endif
             arithmeticOpeation(ASSIGNSY, index, -1, index2);
-//        }
+#ifdef CONSTANT_EXPRESS
+        }
+#endif
         index = index2;
     } else if(symbolTable[index].type != type) {
         symbolTable[index].type = type;

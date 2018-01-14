@@ -88,19 +88,27 @@ int arithmeticOpeation(SYMBOL oper, int leftIndex, int rightIndex, int destinati
         strcpy(cur.lft, "0");
     } else {
         assert(leftIndex >= 0 && leftIndex < symbolCount && hasValue(leftIndex));
-//        if(symbolTable[leftIndex].kind == CONST) {
-//            sprintf(cur.lft, "%d", symbolTable[leftIndex].value);
-//        } else {
+#ifdef CONSTANT_EXPRESS
+        if(symbolTable[leftIndex].kind == CONST) {
+            sprintf(cur.lft, "%d", symbolTable[leftIndex].value);
+        } else {
+#endif
             strcpy(cur.lft, symbolTable[leftIndex].name);
-//        }
+#ifdef CONSTANT_EXPRESS
+        }
+#endif
     }
     if(oper != ASSIGNSY) {
         assert(rightIndex >= 0 && rightIndex < symbolCount && hasValue(rightIndex));
-//        if(symbolTable[rightIndex].kind == CONST) {
-//            sprintf(cur.rht, "%d", symbolTable[rightIndex].value);
-//        } else {
+#ifdef CONSTANT_EXPRESS
+        if(symbolTable[rightIndex].kind == CONST) {
+            sprintf(cur.rht, "%d", symbolTable[rightIndex].value);
+        } else {
+#endif
             strcpy(cur.rht, symbolTable[rightIndex].name);
-//        }
+#ifdef CONSTANT_EXPRESS
+        }
+#endif
     } else {
         strcpy(cur.rht, "");
     }
@@ -182,18 +190,26 @@ int branchLabel(SYMBOL oper, int leftIndex, int rightIndex, int falseLabelIndex)
         default: assert(oper == NOTSY); strcpy(cur.op, "beq");
     }
     assert(leftIndex >= 0 && leftIndex < symbolCount && hasValue(leftIndex));
-//    if(symbolTable[leftIndex].kind == CONST) {
-//        sprintf(cur.lft, "%d", symbolTable[leftIndex].value);
-//    } else {
+#ifdef CONSTANT_EXPRESS
+    if(symbolTable[leftIndex].kind == CONST) {
+        sprintf(cur.lft, "%d", symbolTable[leftIndex].value);
+    } else {
+#endif
         strcpy(cur.lft, symbolTable[leftIndex].name);
-//    }
+#ifdef CONSTANT_EXPRESS
+    }
+#endif
     if(oper != NOTSY) {
         assert(rightIndex >= 0 && rightIndex < symbolCount && hasValue(rightIndex));
-//        if(symbolTable[rightIndex].kind == CONST) {
-//            sprintf(cur.rht, "%d", symbolTable[rightIndex].value);
-//        } else {
+#ifdef CONSTANT_EXPRESS
+        if(symbolTable[rightIndex].kind == CONST) {
+            sprintf(cur.rht, "%d", symbolTable[rightIndex].value);
+        } else {
+#endif
             strcpy(cur.rht, symbolTable[rightIndex].name);
-//        }
+#ifdef CONSTANT_EXPRESS
+        }
+#endif
     } else {
         strcpy(cur.rht, "0");
     }
@@ -333,17 +349,25 @@ int storeArrayElement(int arrayIndex, int offsetIndex, int sourceIndex) { // []=
     QUADCODE &cur = codeList[codeCount];
     strcpy(cur.op, "[]=");
     assert(sourceIndex >= 0 && sourceIndex < symbolCount && hasValue(sourceIndex));
-//    if(symbolTable[sourceIndex].kind == CONST) {
-//        sprintf(cur.lft, "%d", symbolTable[sourceIndex].value);
-//    } else {
+#ifdef CONSTANT_EXPRESS
+    if(symbolTable[sourceIndex].kind == CONST) {
+        sprintf(cur.lft, "%d", symbolTable[sourceIndex].value);
+    } else {
+#endif
         strcpy(cur.lft, symbolTable[sourceIndex].name);
-//    }
+#ifdef CONSTANT_EXPRESS
+    }
+#endif
     assert(offsetIndex >= 0 && offsetIndex < symbolCount && hasValue(offsetIndex));
-//    if(symbolTable[offsetIndex].kind == CONST) {
-//        sprintf(cur.rht, "%d", symbolTable[offsetIndex].value);
-//    } else {
+#ifdef CONSTANT_EXPRESS
+    if(symbolTable[offsetIndex].kind == CONST) {
+        sprintf(cur.rht, "%d", symbolTable[offsetIndex].value);
+    } else {
+#endif
         strcpy(cur.rht, symbolTable[offsetIndex].name);
-//    }
+#ifdef CONSTANT_EXPRESS
+    }
+#endif
     assert(arrayIndex >= 0 && arrayIndex < symbolCount && symbolTable[arrayIndex].kind == ARRAY);
     strcpy(cur.dst, symbolTable[arrayIndex].name);
 #ifdef FOURCODE_DEBUG
@@ -360,11 +384,15 @@ int loadArrayElement(int arrayIndex, int offsetIndex, int destinationIndex) { //
     assert(arrayIndex >= 0 && arrayIndex < symbolCount && symbolTable[arrayIndex].kind == ARRAY);
     strcpy(cur.lft, symbolTable[arrayIndex].name);
     assert(offsetIndex >= 0 && offsetIndex < symbolCount && hasValue(offsetIndex));
-//    if(symbolTable[offsetIndex].kind == CONST) {
-//        sprintf(cur.rht, "%d", symbolTable[offsetIndex].value);
-//    } else {
+#ifdef CONSTANT_EXPRESS
+    if(symbolTable[offsetIndex].kind == CONST) {
+        sprintf(cur.rht, "%d", symbolTable[offsetIndex].value);
+    } else {
+#endif
         strcpy(cur.rht, symbolTable[offsetIndex].name);
-//    }
+#ifdef CONSTANT_EXPRESS
+    }
+#endif
     assert(destinationIndex >= 0 && destinationIndex < symbolCount && isVariable(destinationIndex));
     strcpy(cur.dst, symbolTable[destinationIndex].name);
 #ifdef FOURCODE_DEBUG
@@ -380,11 +408,15 @@ int pushParameter(int index) { // pushPara, (type), name,
     strcpy(cur.op, "pushPara");
     assert(index >= 0 && index < symbolCount && hasValue(index));
     strcpy(cur.lft, symbolTable[index].type == INT ? "int" : "char"); // optional
-//    if(symbolTable[index].kind == CONST) {
-//        sprintf(cur.rht, "%d", symbolTable[index].value);
-//    } else {
+#ifdef CONSTANT_EXPRESS
+    if(symbolTable[index].kind == CONST) {
+        sprintf(cur.rht, "%d", symbolTable[index].value);
+    } else {
+#endif
         strcpy(cur.rht, symbolTable[index].name);
-//    }
+#ifdef CONSTANT_EXPRESS
+    }
+#endif
     strcpy(cur.dst, ""); // optional
 #ifdef FOURCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
@@ -392,19 +424,176 @@ int pushParameter(int index) { // pushPara, (type), name,
     return codeCount++;
 }
 
+static bool isLetter(char ch) {
+	return ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+}
 void printCodeList() {
     for(int index = 0; index < codeCount; ++index) {
         QUADCODE &cur = codeList[index];
-        if(strcmp(cur.op, "syscall") == 0 && strcmp(cur.lft, "4") == 0) {
-            fprintf(fout, "#%d: %s, %s, \"", index, cur.op, cur.lft);
-            for(char *ptr = cur.rht; *ptr; ++ptr) {
-                if(*ptr == '\\')
-                    fputc('\\', fout);
-                fputc(*ptr, fout);
+        fprintf(ferr, "#%d: ", index);
+        if(strncmp(cur.op, "def", 3) == 0) { // def kind, type, value, name
+            switch(cur.op[3]) {
+                case 'C': {
+#ifndef CONSTANT_EXPRESS
+                    switch(cur.lft[0]) {
+                        case 'i': {
+                            fprintf(ferr, "const %s %s = %s", cur.lft, cur.dst, cur.rht);
+                            break;
+                        }
+                        case 'c': {
+                            int value;
+                            sscanf(cur.rht, "%d", &value);
+                            fprintf(ferr, "const %s %s = '%c'", cur.lft, cur.dst, value);
+                            break;
+                        }
+                        default: assert(false);
+                    }
+#endif
+                    break;
+                }
+                case 'V': {
+                    fprintf(ferr, "var %s %s", cur.lft, cur.dst);
+                    break;
+                }
+                case 'P': {
+                    fprintf(ferr, "para %s %s", cur.lft, cur.dst);
+                    break;
+                }
+                case 'T': {
+                    fprintf(ferr, "temp %s %s", cur.lft, cur.dst);
+                    break;
+                }
+                case 'A': {
+                    fprintf(ferr, "arr %s %s[%s]", cur.lft, cur.dst, cur.rht);
+                    break;
+                }
+                default: assert(false);
             }
-            fprintf(fout, "\", %s\n", cur.dst);
+        } else if(strcmp(cur.op, "pushPara") == 0) { // pushPara, (type), name,
+            if(isLetter(cur.rht[0])) {
+                fprintf(ferr, "push %s", cur.rht);
+            } else { // constant
+                int value;
+                sscanf(cur.rht, "%d", &value);
+                switch(cur.lft[0]) {
+                    case 'i': {
+                        fprintf(ferr, "push %d", value);
+                        break;
+                    }
+                    case 'c': {
+                        fprintf(ferr, "push '%c'", value);
+                        break;
+                    }
+                    default: assert(false);
+                }
+            }
+        } else if(strcmp(cur.op, "add") == 0 || strcmp(cur.op, "sub") == 0
+            || strcmp(cur.op, "mult") == 0 || strcmp(cur.op, "div") == 0) { // add/sub/mult/div, left, right, destination
+            switch(cur.op[0]) {
+                case 'a': {
+                    fprintf(ferr, "%s = %s + %s", cur.dst, cur.lft, cur.rht);
+                    break;
+                }
+                case 's': {
+                    fprintf(ferr, "%s = %s - %s", cur.dst, cur.lft, cur.rht);
+                    break;
+                }
+                case 'm': {
+                    fprintf(ferr, "%s = %s * %s", cur.dst, cur.lft, cur.rht);
+                    break;
+                }
+                case 'd': {
+                    fprintf(ferr, "%s = %s / %s", cur.dst, cur.lft, cur.rht);
+                    break;
+                }
+                default: assert(false);
+            }
+        } else if(strcmp(cur.op, "=") == 0) { // =, source, , destination
+            fprintf(ferr, "%s = %s", cur.dst, cur.lft);
+        } else if(strcmp(cur.op, "=[]") == 0) { // =[], array, offset, destination
+            fprintf(ferr, "%s = %s[%s]", cur.dst, cur.lft, cur.rht);
+        } else if(strcmp(cur.op, "[]=") == 0) { // []=, source, offset, array
+            fprintf(ferr, "%s[%s] = %s", cur.dst, cur.rht, cur.lft);
+        } else if(strcmp(cur.op, "label") == 0) { // label, labelString, ,
+            fprintf(ferr, "%s:", cur.lft);
+        } else if(strncmp(cur.op, "j", 1) == 0) { // j, , , labelString
+            fprintf(ferr, "GOTO %s", cur.dst);
+        } else if(strncmp(cur.op, "b", 1) == 0) { // bne/beq/bge/bgt/ble/blt, left, right, labelString
+            int len = 0;
+            static char op[3];
+            switch(cur.op[1]) {
+                case 'n': {
+                    op[len++] = '!';
+                    break;
+                }
+                case 'e': {
+                    op[len++] = '=';
+                    break;
+                }
+                case 'l': {
+                    op[len++] = '<';
+                    break;
+                }
+                case 'g': {
+                    op[len++] = '>';
+                    break;
+                }
+                default: assert(false);
+            }
+            switch(cur.op[2]) {
+                case 'e': case 'q': {
+                    op[len++] = '=';
+                    break;
+                }
+                case 't': {
+                    break;
+                }
+                default: assert(false);
+            }
+            op[len] = '\0';
+            fprintf(ferr, "IF %s %s %s GOTO %s", cur.lft, op, cur.rht, cur.dst);
+        } else if(strcmp(cur.op, "syscall") == 0) { // syscall, serviceNumber, source, destination
+            // TODO
+            int serviceNumber = 0;
+            sscanf(cur.lft, "%d", &serviceNumber);
+            switch(serviceNumber) {
+                case 1: {
+                    fprintf(ferr, "write %s", cur.rht);
+                    break;
+                }
+                case 4: {
+                    fprintf(ferr, "write \"%s\"", cur.rht);
+                    break;
+                }
+                case 5: case 12: {
+                    fprintf(ferr, "read %s", cur.dst);
+                    break;
+                }
+                case 11: {
+                    if(isLetter(cur.rht[0])) {
+                        fprintf(ferr, "write %s", cur.rht);
+                    } else {
+                        int value;
+                        sscanf(cur.rht, "%d", &value);
+                        fprintf(ferr, "write '%c'", value);
+                    }
+                    break;
+                }
+                default: assert(false);
+            }
+        } else if(strcmp(cur.op, "function") == 0) { // function, name, type,
+            fprintf(ferr, "%s %s()", cur.rht, cur.lft);
+        } else if(strcmp(cur.op, "endFunction") == 0) { // endFunction, name, type,
+            // fprintf(ferr, "END OF %s %s()", cur.rht, cur.lft);
+        } else if(strcmp(cur.op, "call") == 0) { // call, function, temporaryCount, result
+            fprintf(ferr, "call %s", cur.lft);
+            if(cur.dst[0])
+                fprintf(ferr, "%s = RET", cur.dst);
+        } else if(strcmp(cur.op, "return") == 0) { // return, result, ,
+            fprintf(ferr, "ret %s", cur.lft);
         } else {
-            fprintf(fout, "#%d: %s, %s, %s, %s\n", index, cur.op, cur.lft, cur.rht, cur.dst);
+            assert(false);
         }
+        fprintf(ferr, "\n");
     }
 }

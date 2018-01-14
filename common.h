@@ -25,6 +25,7 @@ const int BYTE_PER_CHAR = 1;
 // #define SYNTAX_DEBUG // to ferr
 // #define SEMANTIC_DEBUG // to fout
 // #define FOURCODE_DEBUG // to ferr
+#define FOURCODE_OUTPUT // to ferr
 #define TRANSFORM_DEBUG // to fout
 #define OPTIMIZE_DEBUG // to ferr
 
@@ -33,6 +34,7 @@ const int BYTE_PER_CHAR = 1;
 // MARS -> Settings -> Delayed branching: OFF
 // MARS -> Settings -> Memory Configuration...: Default
 #define OUTPUT_EOLN
+#define CONSTANT_EXPRESS
 
 // switches for optimization
 #define OPTIMIZATION
