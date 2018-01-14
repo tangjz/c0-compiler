@@ -23,7 +23,7 @@
 	"common.h"
 	"error.h"
 
-1515890361 source:c:\users\tangjz2\desktop\c0-compiler\scanner.cpp
+1515943379 source:c:\users\tangjz2\desktop\c0-compiler\scanner.cpp
 	"scanner.h"
 
 1515072847 c:\users\tangjz2\desktop\c0-compiler\syntax.h
@@ -33,7 +33,7 @@
 	"table.h"
 	"pseudo.h"
 
-1515892496 source:c:\users\tangjz2\desktop\c0-compiler\syntax.cpp
+1515944143 source:c:\users\tangjz2\desktop\c0-compiler\syntax.cpp
 	"syntax.h"
 
 1515889410 source:c:\users\tangjz2\desktop\c0-compiler\table.cpp

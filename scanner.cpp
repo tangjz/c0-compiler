@@ -207,9 +207,10 @@ void getSymbol() {
 				break;
 			}
 		if(!symbol && !isEof()) {
-			return;
+            symbol = NOTSY;
+		} else {
+            getChar();
 		}
-		getChar();
 	}
 }
 

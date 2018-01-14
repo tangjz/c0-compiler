@@ -34,6 +34,59 @@ static char identifier[TOKEN_MAX];
 static bool hasReturnStatement;
 static int ifCount, loopCount, switchCount;
 
+// skip tool: only used for syntax
+enum SKIP {NTH, NTYP, NCTYP, NCS, NTYPST, NCP, NSP, NC, NS};
+void skipSymbol(SKIP type) {
+    switch(type) {
+        case NTH: { // do nothing
+            break;
+        }
+        case NTYP: { // before next type
+            while(symbol != NOTSY && symbol != INTSY && symbol != CHARSY && symbol != VOIDSY)
+                getSymbol();
+            break;
+        }
+        case NCTYP: { // before next 'const' or type
+            while(symbol != NOTSY && symbol != CONSTSY && symbol != INTSY && symbol != CHARSY && symbol != VOIDSY)
+                getSymbol();
+            break;
+        }
+        case NCS: { // before next ',' or ';'
+            while(symbol != NOTSY && symbol != COMMASY && symbol != SEMISY)
+                getSymbol();
+            break;
+        }
+        case NTYPST: { // before next type or statement
+            while(symbol != NOTSY && symbol != INTSY && symbol != CHARSY && symbol != VOIDSY
+                && symbol != IFSY && symbol != FORSY && symbol != BEGINSY && symbol != IDSY
+                && symbol != READSY && symbol != WRITESY && symbol != SEMISY && symbol != SWITCHSY && symbol != RETURNSY)
+                getSymbol();
+            break;
+        }
+        case NCP: { // before next ',' or ')'
+            while(symbol != NOTSY && symbol != COMMASY && symbol != RPARSY)
+                getSymbol();
+            break;
+        }
+        case NSP: { // before next ';' or ')'
+            while(symbol != NOTSY && symbol != SEMISY && symbol != RPARSY)
+                getSymbol();
+            break;
+        }
+        case NC: { // before next ':'
+            while(symbol != NOTSY && symbol != COLONSY)
+                getSymbol();
+            break;
+        }
+        case NS: { // before next ';'
+            while(symbol != NOTSY && symbol != SEMISY)
+                getSymbol();
+            break;
+        }
+        default: assert(false);
+    }
+}
+
 void program() {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
     int globalEndLabel = generateLabel();
@@ -54,8 +107,8 @@ void program() {
         strcpy(identifier, token);
         if(symbol != IDSY && symbol != MAINSY) {
             addError(21);
-            addError();
-            break; // or skip to identifier
+            skipSymbol(NTYP);
+            break;
         } else {
             if(symbol == MAINSY) {
                 hasMainFunction = true;
@@ -66,15 +119,14 @@ void program() {
         if(symbol != LPARSY && (typeSymbol == INTSY || typeSymbol == CHARSY)) {
             if(forbidVaribleDefinition) {
                 addError(35);
-                addError();
-                // skip definition
+                skipSymbol(NTYP);
+                continue;
             }
             hasVaribleDefinition = true;
             variableDefinitionModified(startLineIndexInner, startColumnIndexInner);
             if(symbol != SEMISY) {
                 addError(15);
-                if(symbol == COLONSY) // mismatched
-                    getSymbol();
+                // do nothing
             } else {
                 getSymbol();
             }
@@ -116,24 +168,21 @@ void functionDefinitionModified(int startLineIndex, int startColumnIndex) {
 //    strcpy(identifier, token);
 //    if(symbol != IDSY && symbol != MAINSY) {
 //        addError(21);
-//        addError();
-//        break;
+//        skipSymbol(NTYP);
+//        return;
 //    }
     headerIndex = findSymbol(identifier);
     if(headerIndex != -1) { // multi-definition
         // global multi-def
         addError(37);
-        addError();
-        // should skip to the end of definition
-        return;
+        // do nothing
     }
     headerIndex = insertSymbol(identifier, FUNCTION, typeSymbol == VOIDSY ? VOID : (typeSymbol == INTSY ? INT : CHAR), true, 0);
     int startLabel = generateLabel(headerIndex, 1), endLabel = generateLabel(headerIndex, 2);
     setLabel(startLabel);
     int startCodeIndex = startOfFunction(headerIndex); // allocate local variables (in stack) and temporary variables (out of stack)
     if(symbol != LPARSY) { // should never be reached
-        addError(9);
-        addError();
+        addError(0); // addError(9);
         return;
     } else {
         getSymbol();
@@ -141,15 +190,14 @@ void functionDefinitionModified(int startLineIndex, int startColumnIndex) {
     parameterTable();
     if(symbol != RPARSY) {
         addError(10);
-        addError();
-        // should skip to follow set
+        // do nothing
     } else {
         getSymbol();
     }
     if(symbol != BEGINSY) {
         addError(13);
-        addError();
-        return; // should skip to follow set
+        skipSymbol(NTYP);
+        return;
     } else {
         getSymbol();
     }
@@ -159,8 +207,7 @@ void functionDefinitionModified(int startLineIndex, int startColumnIndex) {
         addError(25);
     if(symbol != ENDSY) {
         addError(14);
-        addError();
-        // should skip to follow set
+        // do nothing
     } else {
         getSymbol();
     }
@@ -210,8 +257,7 @@ void constantStatement() {
         constantDefinition();
         if(symbol != SEMISY) {
             addError(15);
-            addError();
-            return; // should skip to follow set
+            // do nothing
         } else {
             getSymbol();
         }
@@ -224,42 +270,39 @@ void constantStatement() {
 void constantDefinition() {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
     if(symbol != INTSY && symbol != CHARSY) {
-        // should try to match ?
         addError(22);
-        addError();
-        return; // should skip to the follow set
+        skipSymbol(NCTYP);
+        return;
     }
     typeSymbol = symbol;
     do {
         getSymbol(); // read typeSymbol or COMMA
         if(symbol != IDSY) {
             addError(21);
-            addError();
-            return; // should skip to follow set or skip to identity
+            skipSymbol(NCS);
+            continue;
         }
         int index = findSymbol(token);
         if(index != -1 && (headerIndex == -1 || index == headerIndex || !symbolTable[index].isGlobal)) { // multi-definition
             // global multi-def, local def as same as function, local multi-def
             addError(37);
-            addError();
-            return; // skip to the end of definition
+            // do nothing
         } else {
             index = insertSymbol(token, CONST, typeSymbol == INTSY ? INT : CHAR, headerIndex == -1);
-            getSymbol();
         }
+        getSymbol();
         if(symbol != ASSIGNSY) {
             addError(17);
-            addError();
-            return; // skip to the follow set
+            skipSymbol(NCS);
+            continue;
         } else {
             getSymbol();
         }
         if(symbolTable[index].type == CHAR) {
             if(symbol != CHSY) {
-                // should try to match ?
                 addError(19);
-                addError();
-                return; // skip to the follow set
+                skipSymbol(NCS);
+                continue;
             } else {
                 symbolTable[index].value = token[0];
             }
@@ -273,10 +316,9 @@ void constantDefinition() {
                 stage = -1;
             }
             if(symbol != NUMSY) {
-                // should try to match ?
                 addError(20);
-                addError();
-                return;
+                skipSymbol(NCS);
+                continue;
             } else if(stage && !number) {
                 addWarning(4);
             }
@@ -313,16 +355,15 @@ void variableStatement() {
         getSymbol();
         if(symbol != IDSY) {
             addError(21);
-            addError();
-            break;
+            skipSymbol(NTYP);
+            continue;
         }
         strcpy(identifier, token);
         getSymbol();
         variableDefinitionModified(startLineIndexInner, startColumnIndexInner);
         if(symbol != SEMISY) {
             addError(15);
-            if(symbol == COLONSY)
-                getSymbol();
+            // do nothing
         }
         getSymbol();
     }
@@ -342,7 +383,7 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
 //    getSymbol();
 //    if(symbol != IDSY) {
 //        addError(21);
-//        addError();
+//        skipSymbol(NTYP);
 //        return;
 //    }
 //    strcpy(identifier, token);
@@ -352,13 +393,12 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
     if(index != -1 && (headerIndex == -1 || index == headerIndex || !symbolTable[index].isGlobal)) { // multi-definition
         // global multi-def, local def as same as function, local multi-def
         addError(37);
-        addError();
-        return; // should skip to follow set
+        // do nothing
     }
     if(symbol == LPARSY) {
         addError(36);
-        addError();
-        return; // should skip to the follow set
+        skipSymbol(NTYPST);
+        return;
     }
     if(symbol == LBRASY) { // array
         getSymbol();
@@ -371,8 +411,7 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
         getSymbol();
         if(symbol != RBRASY) {
             addError(12);
-            addError();
-            // should skip to the follow set
+            // do nothing
         } else {
             getSymbol();
         }
@@ -389,19 +428,17 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
         getSymbol();
         if(symbol != IDSY) {
             addError(21);
-            addError();
-            return;
+            skipSymbol(NCS);
+            continue;
         }
         strcpy(identifier, token);
         index2 = findSymbol(identifier);
         if(index2 != -1 && (headerIndex == -1 || index2 == headerIndex || !symbolTable[index2].isGlobal)) { // multi-definition
             // global multi-def, local def as same as function, local multi-def
             addError(37);
-            addError();
-            return; // should skip to follow set
-        } else {
-            getSymbol();
+            // do nothing
         }
+        getSymbol();
         if(symbol == LBRASY) { // array
             getSymbol();
             if(symbol != NUMSY || !number) {
@@ -413,8 +450,7 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
             getSymbol();
             if(symbol != RBRASY) {
                 addError(12);
-                addError();
-                // should skip to the follow set
+                // do nothing
             } else {
                 getSymbol();
             }
@@ -446,15 +482,14 @@ void parameterTable() {
                 getSymbol();
                 if(symbol != IDSY) {
                     addError(21);
-                    addError();
-                    return; // should skip to the end of definition or skip to identifier
+                    skipSymbol(NCP);
+                    continue;
                 }
                 int index = findSymbol(token);
                 if(index != -1 && (index == headerIndex || !symbolTable[index].isGlobal)) { // multi-definition in parameters
                     // local def as same as function, local multi-def
                     addError(37);
-                    addError();
-                    return; // should skip to the follow set
+                    // do nothing
                 } else {
                     index = insertSymbol(token, PARAMETER, typeSymbol == INTSY ? INT : CHAR, false, 0);
                 }
@@ -463,8 +498,8 @@ void parameterTable() {
                 defineElement(index);
             } else {
                 addError(22);
-                addError();
-                return; // should skip to the follow set
+                skipSymbol(NCP);
+                continue;
             }
         } while(symbol == COMMASY);
     }
@@ -519,8 +554,7 @@ void statement() {
             statementList();
             if(symbol != ENDSY) {
                 addError(14);
-                addError();
-                // should skip to follow set
+                // do nothing
             } else {
                 getSymbol();
             }
@@ -529,9 +563,19 @@ void statement() {
             strcpy(identifier, token);
             getSymbol();
             if(symbol != LPARSY && symbol != ASSIGNSY && symbol != LBRASY) {
-                addError(11);
-                addError();
-                return; // should skip to follow set
+                int index = findSymbol(identifier);
+                if(index == -1) {
+                    addError(31);
+                } else if(symbolTable[index].kind == ARRAY) {
+                    addError(11);
+                } else if(symbolTable[index].kind == FUNCTION) {
+                    addError(9);
+                } else {
+                    addError(17);
+                }
+                // do nothing
+                getSymbol();
+                return;
             }
             if(symbol == LPARSY) {
                 int returnIndex = callStatementModified(startLineIndex, startColumnIndex);
@@ -541,8 +585,7 @@ void statement() {
             }
             if(symbol != SEMISY) {
                 addError(15);
-                addError();
-                // should skip to follow set
+                // do nothing
             } else {
                 getSymbol();
             }
@@ -551,8 +594,7 @@ void statement() {
             readStatement();
             if(symbol != SEMISY) {
                 addError(15);
-                addError();
-                // should skip to follow set
+                // do nothing
             } else {
                 getSymbol();
             }
@@ -561,8 +603,7 @@ void statement() {
             writeStatement();
             if(symbol != SEMISY) {
                 addError(15);
-                addError();
-                // should skip to follow set
+                // do nothing
             } else {
                 getSymbol();
             }
@@ -577,16 +618,14 @@ void statement() {
             returnStatement();
             if(symbol != SEMISY) {
                 addError(15);
-                addError();
-                // should skip to follow set
+                // do nothing
             } else {
                 getSymbol();
             }
             break;
         } default : {
             addError(15);
-            addError();
-            return; // should skip to follow set
+            // do nothing
         }
     }
 #ifdef SYNTAX_DEBUG
@@ -604,8 +643,7 @@ void ifStatement() {
     }
     if(symbol != LPARSY) {
         addError(9);
-        addError();
-        return; // skip to follow set
+        // do nothing
     } else {
         getSymbol();
     }
@@ -614,8 +652,7 @@ void ifStatement() {
     condition(elseLabel);
     if(symbol != RPARSY) {
         addError(10);
-        addError();
-        // skip to follow set
+        // do nothing
     } else {
         getSymbol();
     }
@@ -721,8 +758,7 @@ int factor() {
             int index = findSymbol(identifier);
             if(index == -1) {
                 addError(31);
-                addError();
-                return -1; // skip to the follow set
+                return -1;
             }
             if(symbol == LBRASY) { // array
                 getSymbol();
@@ -735,8 +771,7 @@ int factor() {
                 revokeTemporarySymbol(offsetIndex);
                 if(symbol != RBRASY) {
                     addError(12);
-                    addError();
-                    // should skip to the follow set
+                    // do nothing
                 } else {
                     getSymbol();
                 }
@@ -748,9 +783,8 @@ int factor() {
         getSymbol();
         returnIndex = expression();
         if(symbol != RPARSY) {
-            addError(12);
-            addError();
-            // should skip to the follow set
+            addError(10);
+            // do nothing
         } else {
             getSymbol();
         }
@@ -768,9 +802,8 @@ int factor() {
             stage = -1;
         }
         if(symbol != NUMSY) {
-            // should try to match ?
             addError(20);
-            addError();
+            // do nothing
             return -1;
         } else if(stage && !number) {
             addWarning(4);
@@ -803,33 +836,29 @@ int factor() {
 // <identifier> are already read (in static)
 int callStatementModified(int startLineIndex, int startColumnIndex) {
 //    int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
-//    if(symbol != IDSY) {
-//        // should try to match ?
-//        puts("There should be an identifier.");
-//        return; // should skip to the end of statement
+//    if(symbol != IDSY) { // should never be reached
+//        addError(0);
+//        return;
 //    }
 //    strcpy(identifier, token);
 //    getSymbol();
     int index = findSymbol(identifier), returnIndex = -1;
     if(index == -1 || symbolTable[index].kind != FUNCTION) {
         addError(32);
-        addError();
-        return -1; // should skip to the follow set
+        // do nothing
     } else if(strcmp(symbolTable[index].name, "main") == 0) {
         addWarning(8);
     }
-    if(symbol != LPARSY) {
-        addError(9);
-        addError();
-        return -1; // should skip to the follow set
+    if(symbol != LPARSY) { // should never be reached
+        addError(0);
+        return -1;
     } else {
         getSymbol();
     }
     returnIndex = valueParameterTable(index);
     if(symbol != RPARSY) {
         addError(10);
-        addError();
-        // should skip to the follow set
+        // do nothing
     } else {
         getSymbol();
     }
@@ -842,35 +871,32 @@ int callStatementModified(int startLineIndex, int startColumnIndex) {
 int valueParameterTable(int calleeIndex) {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
     int returnIndex = -1;
-    if(symbolTable[calleeIndex].type != VOID) {
+    if(calleeIndex != -1 && symbolTable[calleeIndex].type != VOID) {
         returnIndex = generateTemporarySymbol(symbolTable[calleeIndex].type);
     }
     int parameterCount = 0, parameterBaseIndex = temporaryBaseIndex + temporaryCount;
     if(symbol != RPARSY) {
         while(true) {
             int tempIndex = expression();
-            if(parameterCount == symbolTable[calleeIndex].value) {
-                addError(38);
-                addError();
-                return -1; // should skip to the follow set
-            }
             ++parameterCount;
-            if(symbolTable[tempIndex].type != symbolTable[calleeIndex + parameterCount].type) {
+            if(calleeIndex != -1 && symbolTable[tempIndex].type != symbolTable[calleeIndex + parameterCount].type) {
                 addWarning(symbolTable[tempIndex].type == INT ? 10 : 11);
             }
-            formatterTemporarySymbol(tempIndex, symbolTable[calleeIndex + parameterCount].type);
+            if(calleeIndex != -1)
+                formatterTemporarySymbol(tempIndex, symbolTable[calleeIndex + parameterCount].type);
             pushParameter(tempIndex);
             if(symbol != COMMASY)
                 break;
             getSymbol();
         }
     }
-    if(parameterCount != symbolTable[calleeIndex].value) {
+    if(calleeIndex == -1 || parameterCount != symbolTable[calleeIndex].value) {
         addError(38);
-        addError();
+        // do nothing
         return -1;
     }
-    userCall(calleeIndex, returnIndex);
+    if(calleeIndex != -1)
+        userCall(calleeIndex, returnIndex);
     // after callee finished, free (not real, just revoke) parameters (caller's temporary variable)
     while(parameterCount) {
         revokeTemporarySymbol(parameterBaseIndex + parameterCount);
@@ -895,20 +921,19 @@ void forStatement() {
     }
     if(symbol != LPARSY) {
         addError(9);
-        addError(0);
-        return; // should skip to the follow set
+        // do nothing
     } else {
         getSymbol();
     }
     if(symbol != IDSY) {
         addError(21);
-        addError();
-        return; // should skip to the follow set
+        skipSymbol(NSP);
     }
     int index = findSymbol(token);
     bool extraVariable = false;
     if(index == -1) {
         addError(31);
+        // do nothing
         extraVariable = true; // allocate a temporarily variable to replace
         index = generateTemporarySymbol(INT, 0);
     } else {
@@ -916,21 +941,19 @@ void forStatement() {
     }
     if(symbol != ASSIGNSY) {
         addError(17);
-        addError();
-        return; // should skip to the follow set
+        skipSymbol(NSP);
     } else {
         getSymbol();
-    }
-    int initIndex = expression();
-    arithmeticOpeation(ASSIGNSY, initIndex, -1, index);
-    revokeTemporarySymbol(initIndex);
-    jumpLabel(loopBlockLabel);
-    if(symbol != SEMISY) {
-        addError(15);
-        if(symbol == COLONSY)
+        int initIndex = expression();
+        arithmeticOpeation(ASSIGNSY, initIndex, -1, index);
+        revokeTemporarySymbol(initIndex);
+        jumpLabel(loopBlockLabel);
+        if(symbol != SEMISY) {
+            addError(15);
+            // do nothing
+        } else {
             getSymbol();
-    } else {
-        getSymbol();
+        }
     }
     setLabel(loopConditionLabel);
     checkingIndex = index;
@@ -942,67 +965,61 @@ void forStatement() {
     checkingIndex = -1;
     if(symbol != SEMISY) {
         addError(15);
-        if(symbol == COLONSY)
-            getSymbol();
+        // do nothing
     } else {
         getSymbol();
     }
     setLabel(loopIterationLabel);
     if(symbol != IDSY) {
         addError(21);
-        addError();
-        return; // should skip to the follow set
-    } else if(findSymbol(token) != index) {
-        addError(24);
+        skipSymbol(NSP);
     } else {
+        if(findSymbol(token) != index)
+            addError(24);
         getSymbol();
+        if(symbol != ASSIGNSY) {
+            addError(17);
+            skipSymbol(NSP);
+        } else {
+            getSymbol();
+            if(symbol != IDSY) {
+                addError(21);
+                skipSymbol(NSP);
+            } else {
+                if(findSymbol(token) != index)
+                    addError(24);
+                getSymbol();
+                if(symbol != PLUSSY && symbol != MINUSSY) {
+                    addError(18);
+                    skipSymbol(NSP);
+                } else {
+                    typeSymbol = symbol;
+                    getSymbol();
+                    if(symbol != NUMSY || !number) {
+                        addError(20);
+                        skipSymbol(NSP);
+                    } else {
+                        if(number > (unsigned)INT_MAX) {
+                            if(number == (unsigned)INT_MAX + 1)
+                                addWarning(5);
+                        }
+                        int tempIndex = generateTemporarySymbol(INT, number < (unsigned)INT_MAX ? number : INT_MAX);
+                        if(typeSymbol == PLUSSY) {
+                            arithmeticOpeation(PLUSSY, index, tempIndex, index);
+                        } else { // MINUSSY
+                            arithmeticOpeation(MINUSSY, index, tempIndex, index);
+                        }
+                        revokeTemporarySymbol(tempIndex);
+                        getSymbol();
+                        jumpLabel(loopConditionLabel);
+                    }
+                }
+            }
+        }
     }
-    if(symbol != ASSIGNSY) {
-        addError(17);
-        addError();
-        return; // should skip to the follow set
-    } else {
-        getSymbol();
-    }
-    if(symbol != IDSY) {
-        addError(21);
-        addError();
-        return; // should skip to the follow set
-    } else if(findSymbol(token) != index) {
-        addError(24);
-    } else {
-        getSymbol();
-    }
-    if(symbol != PLUSSY && symbol != MINUSSY) {
-        addError(18);
-        addError();
-        return; // should skip to the follow set
-    } else {
-        typeSymbol = symbol;
-        getSymbol();
-    }
-    if(symbol != NUMSY || !number) {
-        // should try to match ?
-        addError(20);
-        addError();
-        return;
-    } else if(number > (unsigned)INT_MAX) {
-        if(number == (unsigned)INT_MAX + 1)
-            addWarning(5);
-    }
-    int tempIndex = generateTemporarySymbol(INT, number < (unsigned)INT_MAX ? number : INT_MAX);
-    if(typeSymbol == PLUSSY) {
-        arithmeticOpeation(PLUSSY, index, tempIndex, index);
-    } else { // MINUSSY
-        arithmeticOpeation(MINUSSY, index, tempIndex, index);
-    }
-    revokeTemporarySymbol(tempIndex);
-    jumpLabel(loopConditionLabel);
-    getSymbol();
     if(symbol != RPARSY) {
         addError(10);
-        addError();
-        return; // should skip to the follow set
+        // do nothing
     } else {
         getSymbol();
     }
@@ -1030,37 +1047,34 @@ void assignStatementModified(int startLineIndex, int startColumnIndex) {
     int leftIndex = findSymbol(identifier), leftOffsetIndex = -1, rightIndex = -1;
     if(leftIndex == -1) {
         addError(31);
-        addError();
-        return; // should skip to follow set
+        // do nothing
     }
     if(symbol == LBRASY) { // array
-        if(symbolTable[leftIndex].kind != ARRAY) {
-            addError(31);
-            addError();
-            return; // should skip to follow set
-        } else {
-            getSymbol();
+        if(leftIndex == -1 || symbolTable[leftIndex].kind != ARRAY) {
+            if(leftIndex != -1) {
+                addError(31);
+                // do nothing
+            }
         }
+        getSymbol();
         leftOffsetIndex = expression();
         if(symbolTable[leftOffsetIndex].type != INT)
             formatterTemporarySymbol(leftOffsetIndex, INT);
         // WARNING: if return value is less than zero or large than or equal to the size of array, undefined behavior would be caused
         if(symbol != RBRASY) {
             addError(12);
-            addError();
-            // should skip to follow set
+            // do nothing
         } else {
             getSymbol();
         }
     } else if(symbolTable[leftIndex].kind == CONST || symbolTable[leftIndex].kind == FUNCTION) {
         addError(33);
-        addError();
-        return; // should skip to follow set
+        // do nothing
     }
     if(symbol != ASSIGNSY) {
         addError(17);
-        addError();
-        return; // should skip to follow set
+        skipSymbol(NTYPST);
+        return;
     } else {
         getSymbol();
         rightIndex = expression();
@@ -1093,22 +1107,26 @@ void readStatement() {
     }
     if(symbol != LPARSY) {
         addError(9);
-        addError(0);
-        return; // should skip to follow set
+        // do nothing
     }
     do {
         getSymbol(); // LPAR or COMMA
         int index;
-        if(symbol != IDSY || (index = findSymbol(token)) == -1) {
-            addError(symbol != IDSY ? 21 : 31);
-            addError();
-            return; // should skip to follow set
+        if(symbol != IDSY) {
+            addError(21);
+            skipSymbol(NCP);
+            continue;
+        }
+        index = findSymbol(token);
+        if(index == -1) {
+            addError(31);
+            // do nothing
         } else if(symbolTable[index].kind != VARIABLE && symbolTable[index].kind != PARAMETER) {
             addError(33);
-            addError();
-            return; // should skip to follow set
-        } else {
-            getSymbol();
+            // do nothing
+        }
+        getSymbol();
+        if(index != -1) {
             if(symbolTable[index].type == INT) {
                 sysCall(5, -1, index); // read INT
             } else { // CHAR
@@ -1118,8 +1136,7 @@ void readStatement() {
     } while(symbol == COMMASY);
     if(symbol != RPARSY) {
         addError(10);
-        addError();
-        // skip to follow set
+        // do nothing
     } else {
         getSymbol();
     }
@@ -1138,8 +1155,7 @@ void writeStatement() {
     }
     if(symbol != LPARSY) {
         addError(9);
-        addError();
-        return; // should skip to follow set
+        // do nothing
     } else {
         getSymbol();
     }
@@ -1169,8 +1185,7 @@ void writeStatement() {
     }
     if(symbol != RPARSY) {
         addError(10);
-        addError();
-        // should skip to follow set
+        // do nothing
     } else {
         getSymbol();
     }
@@ -1192,23 +1207,20 @@ void caseStatement() {
     }
     if(symbol != LPARSY) {
         addError(9);
-        addError();
-        return; // should skip to follow set
+        // do nothing
     } else {
         getSymbol();
     }
     int index = expression();
     if(symbol != RPARSY) {
         addError(10);
-        addError();
-        // should skip to follow set
+        // do nothing
     } else {
         getSymbol();
     }
     if(symbol != BEGINSY) {
         addError(13);
-        addError();
-        return; // should skip to follow set
+        // do nothing
     } else {
         getSymbol();
     }
@@ -1219,8 +1231,7 @@ void caseStatement() {
     setLabel(switchEndLabel);
     if(symbol != ENDSY) {
         addError(14);
-        addError();
-        return; // should skip to follow set
+        // do nothing
     } else {
         getSymbol();
     }
@@ -1262,44 +1273,45 @@ void caseSubstatement(int expIndex, int switchEndLabel, int caseLabelIndex) {
             stage = -1;
         }
         if(symbol != NUMSY) {
-            // should try to match ?
             addError(20);
-            addError();
-            return;
-        } else if(stage && !number) {
-            addWarning(4);
-        }
-        caseIndex = generateTemporarySymbol(INT);
-        if(stage < 0) {
-            if(number > (unsigned)INT_MAX + 1) {
-                symbolTable[caseIndex].value = INT_MIN;
-            } else {
-                symbolTable[caseIndex].value = 0 - number;
-            }
+            skipSymbol(NC);
         } else {
-            if(number > (unsigned)INT_MAX) {
-                if(number == (unsigned)INT_MAX + 1)
-                    addWarning(5);
-                symbolTable[caseIndex].value = INT_MAX;
-            } else {
-                symbolTable[caseIndex].value = number;
+            if(stage && !number) {
+                addWarning(4);
             }
+            caseIndex = generateTemporarySymbol(INT);
+            if(stage < 0) {
+                if(number > (unsigned)INT_MAX + 1) {
+                    symbolTable[caseIndex].value = INT_MIN;
+                } else {
+                    symbolTable[caseIndex].value = 0 - number;
+                }
+            } else {
+                if(number > (unsigned)INT_MAX) {
+                    if(number == (unsigned)INT_MAX + 1)
+                        addWarning(5);
+                    symbolTable[caseIndex].value = INT_MAX;
+                } else {
+                    symbolTable[caseIndex].value = number;
+                }
+            }
+            getSymbol();
+            storeImmediate(caseIndex, symbolTable[caseIndex].value);
         }
-        getSymbol();
-        storeImmediate(caseIndex, symbolTable[caseIndex].value);
     }
     if(symbol != COLONSY) {
         addError(16);
-        if(symbol == SEMISY)
-            getSymbol();
+        // do nothing
     } else {
         getSymbol();
     }
-    if(symbolTable[expIndex].type != symbolTable[caseIndex].type) {
+    if(caseIndex == -1 || symbolTable[expIndex].type != symbolTable[caseIndex].type) {
         addWarning(9);
     }
-    branchLabel(EQSY, expIndex, caseIndex, caseEndLabel);
-    revokeTemporarySymbol(caseIndex);
+    if(caseIndex != -1) {
+        branchLabel(EQSY, expIndex, caseIndex, caseEndLabel);
+        revokeTemporarySymbol(caseIndex);
+    }
     statement();
     jumpLabel(switchEndLabel);
     setLabel(caseEndLabel);
@@ -1310,16 +1322,15 @@ void caseSubstatement(int expIndex, int switchEndLabel, int caseLabelIndex) {
 
 void defaultSubstatement() {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
-    if(symbol != DEFAULTSY) {
+    if(symbol != DEFAULTSY) { // should never be reached
         addError(0);
-        return; // should skip to follow set
+        return;
     } else {
         getSymbol();
     }
     if(symbol != COLONSY) {
         addError(16);
-        if(symbol == SEMISY)
-            getSymbol();
+        // do nothing
     } else {
         getSymbol();
     }
@@ -1340,7 +1351,7 @@ void returnStatement() {
     if(symbolTable[headerIndex].type == VOID) {
         if(symbol != SEMISY) {
             addError(39);
-            addError();
+            skipSymbol(NS);
         } else {
             userReturn(-1);
             hasReturnStatement = true;
@@ -1348,15 +1359,13 @@ void returnStatement() {
     } else {
         if(symbol != LPARSY) {
             addError(40);
-            addError();
-            // should skip to the follow set or skip to LPAR
+            skipSymbol(NS);
         } else {
             getSymbol();
             int returnIndex = expression();
             if(symbol != RPARSY) {
                 addError(10);
-                addError();
-                // should skip to the follow set
+                // do nothing
             } else {
                 getSymbol();
             }
