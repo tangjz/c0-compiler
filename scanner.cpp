@@ -114,7 +114,7 @@ void getSymbol() {
 		} // else number (or wrong identifier) is collected
 		if(hasLetter) {
             addError(27);
-            return;
+            symbol = IDSY;
 		} else {
             number = getNumber();
             if(token[0] == '0' && token[1] != '\0') {
@@ -133,21 +133,18 @@ void getSymbol() {
                     addWarning(2);
                 } else {
                     addError(6);
-                    return;
                 }
             }
         } else if(ch != '\'') {
+            catToken();
             for( ; !isEof() && ch != '\'' && ch != '\n'; getChar());
             if(ch == '\'') {
                 addError(28);
-                return;
             } else {
                 addError(6);
-                return;
             }
         } else { // ch == '\'' // no character
             addError(29);
-            return;
         }
         if(ch == '\'' || ch == '\n')
             getChar();
@@ -159,13 +156,12 @@ void getSymbol() {
             getChar();
         }
         if(ch != '\"') {
-            for( ; !isEof() && ch != '\"' && ch != '\n'; getChar());
+            for( ; !isEof() && ch != '\"' && ch != '\n'; getChar())
+                catToken();
             if(ch == '\"') {
                 addError(30);
-                return;
             } else {
                 addError(7);
-                return;
             }
         }
         if(ch == '\"' || ch == '\n')
@@ -185,7 +181,6 @@ void getSymbol() {
             getChar();
 		} else {
 		    addError(8);
-            return;
 		}
 		symbol = NEQSY;
 	} else if(ch == '<') {
