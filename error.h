@@ -4,7 +4,8 @@
 #include "common.h"
 #include "scanner.h"
 
-extern int errorCount, errorSequence[ERROR_MAX];
-extern void error(int errNo = 0);
+extern bool hasError;
+extern void addError(int index = -1);
+extern void addWarning(int index);
 
 #endif // ERROR_H_INCLUDED

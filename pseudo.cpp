@@ -11,16 +11,14 @@ char labelTable[TABLE_SIZE][TOKEN_MAX];
 
 bool checkLabelLimit() {
     if(labelCount == TABLE_SIZE) {
-        puts("Label table is full.");
-        error(0);
+        addError(3);
         return false;
     }
     return true;
 }
 bool checkCodeLimit() {
     if(codeCount == CODE_MAX) {
-        puts("Code list is full.");
-        error(0);
+        addError(4);
         return false;
     }
     return true;

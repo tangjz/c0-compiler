@@ -4,6 +4,7 @@
 #include "common.h"
 #include "table.h"
 #include "scanner.h"
+#include "error.h"
 
 struct QUADCODE {
     char op[OPER_MAX], lft[TOKEN_MAX], rht[TOKEN_MAX], dst[TOKEN_MAX];

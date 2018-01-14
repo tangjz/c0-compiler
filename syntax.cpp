@@ -53,8 +53,8 @@ void program() {
         getSymbol();
         strcpy(identifier, token);
         if(symbol != IDSY && symbol != MAINSY) {
-            puts("There should be an identifier."); // should be modified to error messages
-            error(0);
+            addError(21);
+            addError();
             break; // or skip to identifier
         } else {
             if(symbol == MAINSY) {
@@ -65,15 +65,16 @@ void program() {
         // prefer to recognize as variable definition
         if(symbol != LPARSY && (typeSymbol == INTSY || typeSymbol == CHARSY)) {
             if(forbidVaribleDefinition) {
-                puts("Variable definition can't be placed after any function definition."); // should be modified to error messages
-                error(0);
+                addError(35);
+                addError();
+                // skip definition
             }
             hasVaribleDefinition = true;
             variableDefinitionModified(startLineIndexInner, startColumnIndexInner);
             if(symbol != SEMISY) {
-                puts("Each variable definition should end with a semicolon."); // should be modified to error messages
-                error(0);
-                // should skip to follow set
+                addError(15);
+                if(symbol == COLONSY) // mismatched
+                    getSymbol();
             } else {
                 getSymbol();
             }
@@ -91,16 +92,11 @@ void program() {
         lastEndLineIndexInner = lastEndLineIndex;
         lastEndColumnIndexInner = lastEndColumnIndex;
     }
-    if(!hasMainFunction) {
-        puts("Must have a main function."); // should be modified to error messages
-        error(0);
-    }
+    if(!hasMainFunction)
+        addError(26);
     // code ending
-    if(symbol != NOTSY) { // invalid: extra code
-        puts("There exist extra characters after the end of main function."); // should be modified to error messages
-        error(0);
-        // note user to check the end of codes
-    }
+    if(symbol != NOTSY) // invalid: extra code
+        addError(34);
     setLabel(globalEndLabel);
     // feedback to reviseCodeIndex: j globalEndLabel -> call main
     strcpy(codeList[reviseCodeIndex].op, "call");
@@ -119,15 +115,15 @@ void functionDefinitionModified(int startLineIndex, int startColumnIndex) {
 //    getSymbol();
 //    strcpy(identifier, token);
 //    if(symbol != IDSY && symbol != MAINSY) {
-//        puts("Can't recognize an identifier."); // should be modified to error messages
-//        error(0);
-//        break; // or skip to identifier
+//        addError(21);
+//        addError();
+//        break;
 //    }
     headerIndex = findSymbol(identifier);
     if(headerIndex != -1) { // multi-definition
         // global multi-def
-        puts("There exist multiple definitions."); // should be modified to error messages
-        error(0);
+        addError(37);
+        addError();
         // should skip to the end of definition
         return;
     }
@@ -136,36 +132,34 @@ void functionDefinitionModified(int startLineIndex, int startColumnIndex) {
     setLabel(startLabel);
     int startCodeIndex = startOfFunction(headerIndex); // allocate local variables (in stack) and temporary variables (out of stack)
     if(symbol != LPARSY) { // should never be reached
-        puts("There should be a left parenthesis."); // should be modified to error messages
-        error(0);
+        addError(9);
+        addError();
         return;
     } else {
         getSymbol();
     }
     parameterTable();
     if(symbol != RPARSY) {
-        puts("There should be a right parenthesis."); // should be modified to error messages
-        error(0);
+        addError(10);
+        addError();
         // should skip to follow set
     } else {
         getSymbol();
     }
     if(symbol != BEGINSY) {
-        puts("There should be a left big parenthesis."); // should be modified to error messages
-        error(0);
+        addError(13);
+        addError();
         return; // should skip to follow set
     } else {
         getSymbol();
     }
     hasReturnStatement = false;
     complexStatement(); // local variable, temporary variable managed in complex statement
-    if(symbolTable[headerIndex].type != VOID && !hasReturnStatement) {
-        puts("Each non-void function must have at least one return statement with value."); // should be modified to error messages
-        error(0);
-    }
+    if(symbolTable[headerIndex].type != VOID && !hasReturnStatement)
+        addError(25);
     if(symbol != ENDSY) {
-        puts("There should be a right big parenthesis."); // should be modified to error messages
-        error(0);
+        addError(14);
+        addError();
         // should skip to follow set
     } else {
         getSymbol();
@@ -215,8 +209,8 @@ void constantStatement() {
         getSymbol();
         constantDefinition();
         if(symbol != SEMISY) {
-            puts("There should be a semicolon."); // should be modified to error messages
-            error(0);
+            addError(15);
+            addError();
             return; // should skip to follow set
         } else {
             getSymbol();
@@ -231,31 +225,31 @@ void constantDefinition() {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
     if(symbol != INTSY && symbol != CHARSY) {
         // should try to match ?
-        puts("There should be a type symbol."); // should be modified to error messages
-        error(0);
+        addError(22);
+        addError();
         return; // should skip to the follow set
     }
     typeSymbol = symbol;
     do {
         getSymbol(); // read typeSymbol or COMMA
         if(symbol != IDSY) {
-            puts("There should be an identifier."); // should be modified to error messages
-            error(0);
+            addError(21);
+            addError();
             return; // should skip to follow set or skip to identity
         }
         int index = findSymbol(token);
         if(index != -1 && (headerIndex == -1 || index == headerIndex || !symbolTable[index].isGlobal)) { // multi-definition
             // global multi-def, local def as same as function, local multi-def
-            puts("There exist multiple definitions.");
-            error(0);
+            addError(37);
+            addError();
             return; // skip to the end of definition
         } else {
             index = insertSymbol(token, CONST, typeSymbol == INTSY ? INT : CHAR, headerIndex == -1);
             getSymbol();
         }
         if(symbol != ASSIGNSY) {
-            puts("There exists a constant definition without initialization."); // should be modified to error messages
-            error(0);
+            addError(17);
+            addError();
             return; // skip to the follow set
         } else {
             getSymbol();
@@ -263,8 +257,8 @@ void constantDefinition() {
         if(symbolTable[index].type == CHAR) {
             if(symbol != CHSY) {
                 // should try to match ?
-                puts("There should be a constant character."); // should be modified to error messages
-                error(0);
+                addError(19);
+                addError();
                 return; // skip to the follow set
             } else {
                 symbolTable[index].value = token[0];
@@ -280,26 +274,22 @@ void constantDefinition() {
             }
             if(symbol != NUMSY) {
                 // should try to match ?
-                puts("There should be a number."); // should be modified to error messages
-                error(0);
+                addError(20);
+                addError();
                 return;
             } else if(stage && !number) {
-                puts("There should be a non-zero number after sign."); // should be modified to error messages
-                error(0);
-                // process as tolerance
+                addWarning(4);
             }
             if(stage < 0) {
-                if(number > (unsigned)INT_MAX + 1) { // need to add a variable to avoid multiple error messages (number too large)
-                    puts("Number too small."); // should be modified to error messages
-                    error(0);
+                if(number > (unsigned)INT_MAX + 1) {
                     symbolTable[index].value = INT_MIN;
                 } else {
                     symbolTable[index].value = 0 - number;
                 }
             } else {
-                if(number > (unsigned)INT_MAX) { // need to add a variable to avoid multiple error messages (number too large)
-                    puts("Number too large."); // should be modified to error messages
-                    error(0);
+                if(number > (unsigned)INT_MAX) {
+                    if(number == (unsigned)INT_MAX + 1)
+                        addWarning(5);
                     symbolTable[index].value = INT_MAX;
                 } else {
                     symbolTable[index].value = number;
@@ -322,16 +312,17 @@ void variableStatement() {
         typeSymbol = symbol;
         getSymbol();
         if(symbol != IDSY) {
-            puts("There should be an identifier."); // should be modified to error messages
-            error(0);
+            addError(21);
+            addError();
             break;
         }
         strcpy(identifier, token);
         getSymbol();
         variableDefinitionModified(startLineIndexInner, startColumnIndexInner);
-        if(symbol != SEMISY) { // each variable definition should end with a semi
-            puts("There should be a semicolon."); // should be modified to error messages
-            error(0);
+        if(symbol != SEMISY) {
+            addError(15);
+            if(symbol == COLONSY)
+                getSymbol();
         }
         getSymbol();
     }
@@ -344,15 +335,14 @@ void variableStatement() {
 void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
 //    int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
 //    if(symbol != INTSY && symbol != CHARSY) { // should never be reached
-//        puts("There should be a type symbol"); // should be modified to error messages
-//        error(0);
+//        addError(0);
 //        return;
 //    }
 //    typeSymbol = symbol;
 //    getSymbol();
 //    if(symbol != IDSY) {
-//        puts("There should be an identifier."); // should be modified to error messages
-//        error(0);
+//        addError(21);
+//        addError();
 //        return;
 //    }
 //    strcpy(identifier, token);
@@ -361,30 +351,27 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
     int index = findSymbol(identifier), index2;
     if(index != -1 && (headerIndex == -1 || index == headerIndex || !symbolTable[index].isGlobal)) { // multi-definition
         // global multi-def, local def as same as function, local multi-def
-        puts("There exist multiple definitions."); // should be modified to error messages
-        error(0);
+        addError(37);
+        addError();
         return; // should skip to follow set
     }
     if(symbol == LPARSY) {
-        puts("There should be a variable definition instead of function."); // should be modified to error messages
-        error(0);
+        addError(36);
+        addError();
         return; // should skip to the follow set
     }
     if(symbol == LBRASY) { // array
         getSymbol();
         if(symbol != NUMSY || !number) {
-            puts("There should be a positive integer."); // should be modified to error messages
-            error(0);
-            return; // should skip to the follow set
+            addWarning(4);
         } else if(number > ARRAY_MAX) {
-            puts("Array length limit exceeded."); // should be modified to error messages
-            error(0);
+            addWarning(6);
         }
         index = insertSymbol(identifier, ARRAY, typeSymbol == INTSY ? INT : CHAR, headerIndex == -1, number <= ARRAY_MAX ? number : ARRAY_MAX);
         getSymbol();
         if(symbol != RBRASY) {
-            puts("There should be a right bracket."); // should be modified to error messages
-            error(0);
+            addError(12);
+            addError();
             // should skip to the follow set
         } else {
             getSymbol();
@@ -401,16 +388,16 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
     while(symbol == COMMASY) {
         getSymbol();
         if(symbol != IDSY) {
-            puts("There should be an identifier."); // should be modified to error messages
-            error(0);
+            addError(21);
+            addError();
             return;
         }
         strcpy(identifier, token);
         index2 = findSymbol(identifier);
         if(index2 != -1 && (headerIndex == -1 || index2 == headerIndex || !symbolTable[index2].isGlobal)) { // multi-definition
             // global multi-def, local def as same as function, local multi-def
-            puts("There exist multiple definitions."); // should be modified to error messages
-            error(0);
+            addError(37);
+            addError();
             return; // should skip to follow set
         } else {
             getSymbol();
@@ -418,18 +405,15 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
         if(symbol == LBRASY) { // array
             getSymbol();
             if(symbol != NUMSY || !number) {
-                puts("There should be a positive integer."); // should be modified to error messages
-                error(0);
-                return; // should skip to the follow set
+                addWarning(4);
             } else if(number > ARRAY_MAX) {
-                puts("Array length limit exceeded."); // should be modified to error messages
-                error(0);
+                addWarning(6);
             }
             index2 = insertSymbol(identifier, ARRAY, symbolTable[index].type, headerIndex == -1, number <= ARRAY_MAX ? number : ARRAY_MAX);
             getSymbol();
             if(symbol != RBRASY) {
-                puts("There should be a right bracket."); // should be modified to error messages
-                error(0);
+                addError(12);
+                addError();
                 // should skip to the follow set
             } else {
                 getSymbol();
@@ -451,11 +435,8 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
 void parameterTable() {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
     if(symbol == INTSY || symbol == CHARSY) {
-        if(strcmp(symbolTable[headerIndex].name, "main") == 0) {
-            puts("Main function should not contain any parameter(s)."); // should be modified to error messages
-            error(0);
-            return; // should skip to the follow set
-        }
+        if(strcmp(symbolTable[headerIndex].name, "main") == 0)
+            addWarning(7);
         do {
             if(symbol == COMMASY) {
                 getSymbol();
@@ -464,15 +445,15 @@ void parameterTable() {
                 typeSymbol = symbol;
                 getSymbol();
                 if(symbol != IDSY) {
-                    puts("There should be an identifier."); // should be modified to error messages
-                    error(0);
+                    addError(21);
+                    addError();
                     return; // should skip to the end of definition or skip to identifier
                 }
                 int index = findSymbol(token);
                 if(index != -1 && (index == headerIndex || !symbolTable[index].isGlobal)) { // multi-definition in parameters
                     // local def as same as function, local multi-def
-                    puts("There exist multiple definitions."); // should be modified to error messages
-                    error(0);
+                    addError(37);
+                    addError();
                     return; // should skip to the follow set
                 } else {
                     index = insertSymbol(token, PARAMETER, typeSymbol == INTSY ? INT : CHAR, false, 0);
@@ -481,8 +462,8 @@ void parameterTable() {
                 ++symbolTable[headerIndex].value;
                 defineElement(index);
             } else {
-                puts("There should be a type symbol."); // should be modified to error messages
-                error(0);
+                addError(22);
+                addError();
                 return; // should skip to the follow set
             }
         } while(symbol == COMMASY);
@@ -537,8 +518,8 @@ void statement() {
             getSymbol();
             statementList();
             if(symbol != ENDSY) {
-                puts("There should be a right big parenthesis."); // should be modified to error messages
-                error(0);
+                addError(14);
+                addError();
                 // should skip to follow set
             } else {
                 getSymbol();
@@ -548,8 +529,8 @@ void statement() {
             strcpy(identifier, token);
             getSymbol();
             if(symbol != LPARSY && symbol != ASSIGNSY && symbol != LBRASY) {
-                puts("There should be a left parenthesis or an assignment or a left bracket."); // should be modified to error messages
-                error(0);
+                addError(11);
+                addError();
                 return; // should skip to follow set
             }
             if(symbol == LPARSY) {
@@ -559,8 +540,8 @@ void statement() {
                 assignStatementModified(startLineIndex, startColumnIndex);
             }
             if(symbol != SEMISY) {
-                puts("There should be a semicolon."); // should be modified to error messages
-                error(0);
+                addError(15);
+                addError();
                 // should skip to follow set
             } else {
                 getSymbol();
@@ -569,8 +550,8 @@ void statement() {
         } case READSY : {
             readStatement();
             if(symbol != SEMISY) {
-                puts("There should be a semicolon."); // should be modified to error messages
-                error(0);
+                addError(15);
+                addError();
                 // should skip to follow set
             } else {
                 getSymbol();
@@ -579,8 +560,8 @@ void statement() {
         } case WRITESY : {
             writeStatement();
             if(symbol != SEMISY) {
-                puts("There should be a semicolon."); // should be modified to error messages
-                error(0);
+                addError(15);
+                addError();
                 // should skip to follow set
             } else {
                 getSymbol();
@@ -595,16 +576,16 @@ void statement() {
         } case RETURNSY : {
             returnStatement();
             if(symbol != SEMISY) {
-                puts("There should be a semicolon."); // should be modified to error messages
-                error(0);
+                addError(15);
+                addError();
                 // should skip to follow set
             } else {
                 getSymbol();
             }
             break;
         } default : {
-            puts("There should be a semicolon."); // should be modified to error messages
-            error(0);
+            addError(15);
+            addError();
             return; // should skip to follow set
         }
     }
@@ -616,15 +597,14 @@ void statement() {
 void ifStatement() {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
     if(symbol != IFSY) { // should never be reached
-        puts("There should be a if symbol."); // should be modified to error messages
-        error(0);
+        addError(0);
         return;
     } else {
         getSymbol();
     }
     if(symbol != LPARSY) {
-        puts("There should be a left parenthesis."); // should be modified to error messages
-        error(0);
+        addError(9);
+        addError();
         return; // skip to follow set
     } else {
         getSymbol();
@@ -633,8 +613,8 @@ void ifStatement() {
     int elseLabel = generateLabel(IFSY, 1, ifCount), endIfLabel = generateLabel(IFSY, 2, ifCount);
     condition(elseLabel);
     if(symbol != RPARSY) {
-        puts("There should be a right parenthesis."); // should be modified to error messages
-        error(0);
+        addError(10);
+        addError();
         // skip to follow set
     } else {
         getSymbol();
@@ -740,8 +720,8 @@ int factor() {
         } else {
             int index = findSymbol(identifier);
             if(index == -1) {
-                puts("Unknown identifier."); // should be modified to error messages
-                error(0);
+                addError(31);
+                addError();
                 return -1; // skip to the follow set
             }
             if(symbol == LBRASY) { // array
@@ -754,8 +734,8 @@ int factor() {
                 loadArrayElement(index, offsetIndex, returnIndex);
                 revokeTemporarySymbol(offsetIndex);
                 if(symbol != RBRASY) {
-                    puts("There should be a right bracket."); // should be modified to error messages
-                    error(0);
+                    addError(12);
+                    addError();
                     // should skip to the follow set
                 } else {
                     getSymbol();
@@ -768,8 +748,8 @@ int factor() {
         getSymbol();
         returnIndex = expression();
         if(symbol != RPARSY) {
-            puts("There should be a right parenthesis."); // should be modified to error messages
-            error(0);
+            addError(12);
+            addError();
             // should skip to the follow set
         } else {
             getSymbol();
@@ -778,7 +758,7 @@ int factor() {
         // assign to the return symbol
         returnIndex = generateTemporarySymbol(CHAR, token[0]);
         getSymbol();
-    } else { // number or error
+    } else { // number
         int stage = 0;
         if(symbol == PLUSSY) {
             getSymbol();
@@ -789,27 +769,23 @@ int factor() {
         }
         if(symbol != NUMSY) {
             // should try to match ?
-            puts("There should be a number."); // should be modified to error messages
-            error(0);
+            addError(20);
+            addError();
             return -1;
         } else if(stage && !number) {
-            puts("There should be a non-zero number after sign."); // should be modified to error messages
-            error(0);
-            // process as tolerance
+            addWarning(4);
         }
         returnIndex = generateTemporarySymbol(INT);
         if(stage < 0) {
-            if(number > (unsigned)INT_MAX + 1) { // need to add a variable to avoid multiple error messages (number too large)
-                puts("Number too small."); // should be modified to error messages
-                error(0);
+            if(number > (unsigned)INT_MAX + 1) {
                 symbolTable[returnIndex].value = INT_MIN;
             } else {
                 symbolTable[returnIndex].value = 0 - number;
             }
         } else {
-            if(number > (unsigned)INT_MAX) { // need to add a variable to avoid multiple error messages (number too large)
-                puts("Number too large."); // should be modified to error messages
-                error(0);
+            if(number > (unsigned)INT_MAX) {
+                if(number == (unsigned)INT_MAX + 1)
+                    addWarning(5);
                 symbolTable[returnIndex].value = INT_MAX;
             } else {
                 symbolTable[returnIndex].value = number;
@@ -836,23 +812,23 @@ int callStatementModified(int startLineIndex, int startColumnIndex) {
 //    getSymbol();
     int index = findSymbol(identifier), returnIndex = -1;
     if(index == -1 || symbolTable[index].kind != FUNCTION) {
-        puts("Unknown function."); // should be modified to error messages
+        addError(32);
+        addError();
         return -1; // should skip to the follow set
     } else if(strcmp(symbolTable[index].name, "main") == 0) {
-        puts("Unable to call main function."); // should be modified to error messages
-        return -1; // should skip to the follow set
+        addWarning(8);
     }
     if(symbol != LPARSY) {
-        puts("There should be a left parenthesis."); // should be modified to error messages
-        error(0);
+        addError(9);
+        addError();
         return -1; // should skip to the follow set
     } else {
         getSymbol();
     }
     returnIndex = valueParameterTable(index);
     if(symbol != RPARSY) {
-        puts("There should be a right parenthesis."); // should be modified to error messages
-        error(0);
+        addError(10);
+        addError();
         // should skip to the follow set
     } else {
         getSymbol();
@@ -874,15 +850,13 @@ int valueParameterTable(int calleeIndex) {
         while(true) {
             int tempIndex = expression();
             if(parameterCount == symbolTable[calleeIndex].value) {
-                puts("Parameters can't be matched."); // should be modified to error messages
-                error(0);
+                addError(38);
+                addError();
                 return -1; // should skip to the follow set
             }
             ++parameterCount;
             if(symbolTable[tempIndex].type != symbolTable[calleeIndex + parameterCount].type) {
-                printf("Warning at Line %d, Column %d: There exists type transform from \"%s\" to \"%s\".\n", currentFrontLineIndex, currentFrontColumnIndex,
-                       symbolTable[tempIndex].type == INT ? "int" : "char",
-                       symbolTable[calleeIndex + parameterCount].type == INT ? "int" : "char");
+                addWarning(symbolTable[tempIndex].type == INT ? 10 : 11);
             }
             formatterTemporarySymbol(tempIndex, symbolTable[calleeIndex + parameterCount].type);
             pushParameter(tempIndex);
@@ -892,8 +866,8 @@ int valueParameterTable(int calleeIndex) {
         }
     }
     if(parameterCount != symbolTable[calleeIndex].value) {
-        puts("Parameters can't be matched."); // should be modified to error messages
-        error(0);
+        addError(38);
+        addError();
         return -1;
     }
     userCall(calleeIndex, returnIndex);
@@ -914,37 +888,35 @@ void forStatement() {
     int loopConditionLabel = generateLabel(FORSY, 1, loopCount), loopIterationLabel = generateLabel(FORSY, 2, loopCount);
     int loopBlockLabel = generateLabel(FORSY, 3, loopCount), loopEndLabel = generateLabel(FORSY, 4, loopCount);
     if(symbol != FORSY) { // should never be reached
-        puts("There should be a for symbol."); // should be modified to error messages
-        error(0);
+        addError(0);
         return;
     } else {
         getSymbol();
     }
     if(symbol != LPARSY) {
-        puts("There should be a left parenthesis."); // should be modified to error messages
-        error(0);
+        addError(9);
+        addError(0);
         return; // should skip to the follow set
     } else {
         getSymbol();
     }
     if(symbol != IDSY) {
-        puts("Unknown identifier."); // should be modified to error messages
-        error(0);
+        addError(21);
+        addError();
         return; // should skip to the follow set
     }
     int index = findSymbol(token);
     bool extraVariable = false;
     if(index == -1) {
-        puts("There exists variable used before its definition."); // should be modified to error messages
-        error(0);
+        addError(31);
         extraVariable = true; // allocate a temporarily variable to replace
         index = generateTemporarySymbol(INT, 0);
     } else {
         getSymbol();
     }
     if(symbol != ASSIGNSY) {
-        puts("There should be an assign operator."); // should be modified to error messages
-        error(0);
+        addError(17);
+        addError();
         return; // should skip to the follow set
     } else {
         getSymbol();
@@ -954,9 +926,9 @@ void forStatement() {
     revokeTemporarySymbol(initIndex);
     jumpLabel(loopBlockLabel);
     if(symbol != SEMISY) {
-        puts("There should be a semicolon."); // should be modified to error messages
-        error(0);
-        return; // should skip to the follow set
+        addError(15);
+        if(symbol == COLONSY)
+            getSymbol();
     } else {
         getSymbol();
     }
@@ -965,51 +937,45 @@ void forStatement() {
     checkingResult = false;
     condition(loopEndLabel);
     jumpLabel(loopBlockLabel);
-    if(!checkingResult) {
-        puts("Loop condition should contain loop variable."); // should be modified to error messages
-        error(0);
-    }
+    if(!checkingResult)
+        addError(23);
     checkingIndex = -1;
     if(symbol != SEMISY) {
-        puts("There should be a semicolon."); // should be modified to error messages
-        error(0);
-        return; // should skip to the follow set
+        addError(15);
+        if(symbol == COLONSY)
+            getSymbol();
     } else {
         getSymbol();
     }
     setLabel(loopIterationLabel);
     if(symbol != IDSY) {
-        puts("Unknown identifier."); // should be modified to error messages
-        error(0);
+        addError(21);
+        addError();
         return; // should skip to the follow set
     } else if(findSymbol(token) != index) {
-        puts("Loop iteration should only operate loop variable"); // should be modified to error messages
-        error(0);
-        return; // should skip to the follow set
+        addError(24);
     } else {
         getSymbol();
     }
     if(symbol != ASSIGNSY) {
-        puts("There should be an assign operator."); // should be modified to error messages
-        error(0);
+        addError(17);
+        addError();
         return; // should skip to the follow set
     } else {
         getSymbol();
     }
     if(symbol != IDSY) {
-        puts("Unknown identifier."); // should be modified to error messages
-        error(0);
+        addError(21);
+        addError();
         return; // should skip to the follow set
     } else if(findSymbol(token) != index) {
-        puts("Loop iteration should only operate loop variable"); // should be modified to error messages
-        error(0);
-        return; // should skip to the follow set
+        addError(24);
     } else {
         getSymbol();
     }
     if(symbol != PLUSSY && symbol != MINUSSY) {
-        puts("Loop iteration should be self-plus or self-minus operation."); // should be modified to error messages
-        error(0);
+        addError(18);
+        addError();
         return; // should skip to the follow set
     } else {
         typeSymbol = symbol;
@@ -1017,12 +983,12 @@ void forStatement() {
     }
     if(symbol != NUMSY || !number) {
         // should try to match ?
-        puts("There should be a number."); // should be modified to error messages
-        error(0);
+        addError(20);
+        addError();
         return;
     } else if(number > (unsigned)INT_MAX) {
-        puts("Number too large."); // should be modified to error messages
-        error(0);
+        if(number == (unsigned)INT_MAX + 1)
+            addWarning(5);
     }
     int tempIndex = generateTemporarySymbol(INT, number < (unsigned)INT_MAX ? number : INT_MAX);
     if(typeSymbol == PLUSSY) {
@@ -1034,8 +1000,8 @@ void forStatement() {
     jumpLabel(loopConditionLabel);
     getSymbol();
     if(symbol != RPARSY) {
-        puts("There should be a right parenthesis."); // should be modified to error messages
-        error(0);
+        addError(10);
+        addError();
         return; // should skip to the follow set
     } else {
         getSymbol();
@@ -1056,22 +1022,21 @@ void forStatement() {
 void assignStatementModified(int startLineIndex, int startColumnIndex) {
 //    int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
 //    if(symbol != IDSY) { // should never be reached
-//        puts("There should be an identifier."); // should be modified to error messages
-//        error(0);
+//        addError(0);
 //        return;
 //    }
 //    strcpy(identifier, token);
 //    getSymbol();
     int leftIndex = findSymbol(identifier), leftOffsetIndex = -1, rightIndex = -1;
     if(leftIndex == -1) {
-        puts("Unknown identifier."); // should be modified to error messages
-        error(0);
+        addError(31);
+        addError();
         return; // should skip to follow set
     }
     if(symbol == LBRASY) { // array
         if(symbolTable[leftIndex].kind != ARRAY) {
-            puts("Unknown array."); // should be modified to error messages
-            error(0);
+            addError(31);
+            addError();
             return; // should skip to follow set
         } else {
             getSymbol();
@@ -1081,31 +1046,27 @@ void assignStatementModified(int startLineIndex, int startColumnIndex) {
             formatterTemporarySymbol(leftOffsetIndex, INT);
         // WARNING: if return value is less than zero or large than or equal to the size of array, undefined behavior would be caused
         if(symbol != RBRASY) {
-            puts("There should be a right bracket."); // should be modified to error messages
-            error(0);
+            addError(12);
+            addError();
             // should skip to follow set
         } else {
             getSymbol();
         }
-    } else if(symbolTable[leftIndex].kind == CONST) {
-        puts("Constant can't be assigned."); // should be modified to error messages
-        error(0);
-        return; // should skip to follow set
-    } else if(symbolTable[leftIndex].kind == FUNCTION) {
-        puts("Function can't be assigned."); // should be modified to error messages
-        error(0);
+    } else if(symbolTable[leftIndex].kind == CONST || symbolTable[leftIndex].kind == FUNCTION) {
+        addError(33);
+        addError();
         return; // should skip to follow set
     }
     if(symbol != ASSIGNSY) {
-        puts("There should be an assign operator."); // should be modified to error messages
-        error(0);
+        addError(17);
+        addError();
         return; // should skip to follow set
     } else {
         getSymbol();
         rightIndex = expression();
     }
     if(symbolTable[leftIndex].type == CHAR && symbolTable[rightIndex].type == INT) { // optional
-        printf("Warning at Line %d, Column %d: There exists assignment from INT to CHAR\n", startLineIndex, startColumnIndex);
+        addWarning(10);
     }
     if(symbolTable[leftIndex].kind == ARRAY) {
         storeArrayElement(leftIndex, leftOffsetIndex, rightIndex);
@@ -1125,27 +1086,26 @@ void assignStatementModified(int startLineIndex, int startColumnIndex) {
 void readStatement() {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
     if(symbol != READSY) { // should never be reached
-        puts("There should be a scanf symbol."); // should be modified to error messages
-        error(0);
+        addError(0);
         return;
     } else {
         getSymbol();
     }
     if(symbol != LPARSY) {
-        puts("There should be a left parenthesis."); // should be modified to error messages
-        error(0);
+        addError(9);
+        addError(0);
         return; // should skip to follow set
     }
     do {
         getSymbol(); // LPAR or COMMA
         int index;
         if(symbol != IDSY || (index = findSymbol(token)) == -1) {
-            puts("Unknown identifier."); // should be modified to error messages
-            error(0);
+            addError(symbol != IDSY ? 21 : 31);
+            addError();
             return; // should skip to follow set
         } else if(symbolTable[index].kind != VARIABLE && symbolTable[index].kind != PARAMETER) {
-            puts("Unsupported type of reading");
-            error(0);
+            addError(33);
+            addError();
             return; // should skip to follow set
         } else {
             getSymbol();
@@ -1157,8 +1117,8 @@ void readStatement() {
         }
     } while(symbol == COMMASY);
     if(symbol != RPARSY) {
-        puts("There should be a right parenthesis."); // should be modified to error messages
-        error(0);
+        addError(10);
+        addError();
         // skip to follow set
     } else {
         getSymbol();
@@ -1171,15 +1131,14 @@ void readStatement() {
 void writeStatement() {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
     if(symbol != WRITESY) { // should never be reached
-        puts("There should be a printf symbol."); // should be modified to error messages
-        error(0);
+        addError(0);
         return;
     } else {
         getSymbol();
     }
     if(symbol != LPARSY) {
-        puts("There should be a left parenthesis."); // should be modified to error messages
-        error(0);
+        addError(9);
+        addError();
         return; // should skip to follow set
     } else {
         getSymbol();
@@ -1209,8 +1168,8 @@ void writeStatement() {
         revokeTemporarySymbol(index);
     }
     if(symbol != RPARSY) {
-        puts("There should be a right parenthesis."); // should be modified to error messages
-        error(0);
+        addError(10);
+        addError();
         // should skip to follow set
     } else {
         getSymbol();
@@ -1226,30 +1185,29 @@ void writeStatement() {
 void caseStatement() {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
     if(symbol != SWITCHSY) { // should never be reached
-        puts("There should be a switch symbol."); // should be modified to error messages
-        error(0);
+        addError(0);
         return;
     } else {
         getSymbol();
     }
     if(symbol != LPARSY) {
-        puts("There should be a left parenthesis."); // should be modified to error messages
-        error(0);
+        addError(9);
+        addError();
         return; // should skip to follow set
     } else {
         getSymbol();
     }
     int index = expression();
     if(symbol != RPARSY) {
-        puts("There should be a right parenthesis."); // should be modified to error messages
-        error(0);
+        addError(10);
+        addError();
         // should skip to follow set
     } else {
         getSymbol();
     }
     if(symbol != BEGINSY) {
-        puts("There should be a left big parenthesis."); // should be modified to error messages
-        error(0);
+        addError(13);
+        addError();
         return; // should skip to follow set
     } else {
         getSymbol();
@@ -1260,8 +1218,8 @@ void caseStatement() {
     defaultSubstatement();
     setLabel(switchEndLabel);
     if(symbol != ENDSY) {
-        puts("There should be a right big parenthesis."); // should be modified to error messages
-        error(0);
+        addError(14);
+        addError();
         return; // should skip to follow set
     } else {
         getSymbol();
@@ -1285,8 +1243,7 @@ void caseTable(int expIndex, int switchEndLabel) {
 void caseSubstatement(int expIndex, int switchEndLabel, int caseLabelIndex) {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
     if(symbol != CASESY) { // should never be reached
-        puts("There should be a case symbol."); // should be modified to error messages
-        error(0);
+        addError(0);
         return;
     } else {
         getSymbol();
@@ -1306,27 +1263,23 @@ void caseSubstatement(int expIndex, int switchEndLabel, int caseLabelIndex) {
         }
         if(symbol != NUMSY) {
             // should try to match ?
-            puts("There should be a number."); // should be modified to error messages
-            error(0);
+            addError(20);
+            addError();
             return;
         } else if(stage && !number) {
-            puts("There should be a non-zero number after sign."); // should be modified to error messages
-            error(0);
-            // process as tolerance
+            addWarning(4);
         }
         caseIndex = generateTemporarySymbol(INT);
         if(stage < 0) {
-            if(number > (unsigned)INT_MAX + 1) { // need to add a variable to avoid multiple error messages (number too large)
-                puts("Number too small."); // should be modified to error messages
-                error(0);
+            if(number > (unsigned)INT_MAX + 1) {
                 symbolTable[caseIndex].value = INT_MIN;
             } else {
                 symbolTable[caseIndex].value = 0 - number;
             }
         } else {
-            if(number > (unsigned)INT_MAX) { // need to add a variable to avoid multiple error messages (number too large)
-                puts("Number too large."); // should be modified to error messages
-                error(0);
+            if(number > (unsigned)INT_MAX) {
+                if(number == (unsigned)INT_MAX + 1)
+                    addWarning(5);
                 symbolTable[caseIndex].value = INT_MAX;
             } else {
                 symbolTable[caseIndex].value = number;
@@ -1336,16 +1289,14 @@ void caseSubstatement(int expIndex, int switchEndLabel, int caseLabelIndex) {
         storeImmediate(caseIndex, symbolTable[caseIndex].value);
     }
     if(symbol != COLONSY) {
-        puts("There should be a colon."); // should be modified to error messages
-        error(0);
-        // should skip to follow set
+        addError(16);
+        if(symbol == SEMISY)
+            getSymbol();
     } else {
         getSymbol();
     }
     if(symbolTable[expIndex].type != symbolTable[caseIndex].type) {
-        printf("Warning at Line %d, Column %d: There exist switch statement of \"%s\" type and case statement of \"%s\" type.\n", currentFrontLineIndex, currentFrontColumnIndex,
-            symbolTable[expIndex].type == INT ? "int" : "char",
-            symbolTable[caseIndex].type == INT ? "int" : "char");
+        addWarning(9);
     }
     branchLabel(EQSY, expIndex, caseIndex, caseEndLabel);
     revokeTemporarySymbol(caseIndex);
@@ -1360,16 +1311,15 @@ void caseSubstatement(int expIndex, int switchEndLabel, int caseLabelIndex) {
 void defaultSubstatement() {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
     if(symbol != DEFAULTSY) {
-        puts("There should be a default symbol."); // should be modified to error messages
-        error(0);
+        addError(0);
         return; // should skip to follow set
     } else {
         getSymbol();
     }
     if(symbol != COLONSY) {
-        puts("There should be a colon."); // should be modified to error messages
-        error(0);
-        // should skip to follow set
+        addError(16);
+        if(symbol == SEMISY)
+            getSymbol();
     } else {
         getSymbol();
     }
@@ -1382,40 +1332,36 @@ void defaultSubstatement() {
 void returnStatement() {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
     if(symbol != RETURNSY) { // should never be reached
-        puts("There should be a return symbol."); // should be modified to error messages
-        error(0);
+        addError(0);
         return;
     } else {
         getSymbol();
     }
     if(symbolTable[headerIndex].type == VOID) {
         if(symbol != SEMISY) {
-            puts("Void function should return without value."); // should be modified to error messages
-            error(0);
-            // should skip to the follow set
+            addError(39);
+            addError();
         } else {
             userReturn(-1);
             hasReturnStatement = true;
         }
     } else {
         if(symbol != LPARSY) {
-            puts("Non-void function should return with value."); // should be modified to error messages
-            error(0);
+            addError(40);
+            addError();
             // should skip to the follow set or skip to LPAR
         } else {
             getSymbol();
             int returnIndex = expression();
             if(symbol != RPARSY) {
-                puts("There should be a right parenthesis."); // should be modified to error messages
-                error(0);
+                addError(10);
+                addError();
                 // should skip to the follow set
             } else {
                 getSymbol();
             }
             if(symbolTable[returnIndex].type != symbolTable[headerIndex].type) {
-                printf("Warning at Line %d, Column %d: There exists type transform from \"%s\" to \"%s\".\n", currentFrontLineIndex, currentFrontColumnIndex,
-                       symbolTable[returnIndex].type == INT ? "int" : "char",
-                       symbolTable[headerIndex].type == INT ? "int" : "char");
+                addWarning(symbolTable[returnIndex].type == INT ? 10 : 11);
                 formatterTemporarySymbol(returnIndex, symbolTable[headerIndex].type);
             }
             userReturn(returnIndex);

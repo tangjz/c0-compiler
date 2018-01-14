@@ -132,6 +132,8 @@ void convertMIPS() {
                     break;
             if(pos)
                 continue;
+            if(stringCount == TABLE_SIZE - 1)
+                addError(5);
             stringIndex[++stringCount] = index;
             fprintf(fout, "\t" "string_%d:" "\t" ".asciiz \"", stringCount);
             for(char *ptr = cur.rht; *ptr; ++ptr) {

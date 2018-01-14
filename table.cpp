@@ -56,11 +56,8 @@ void recalculateStoreSize(int index) {
 int insertSymbol(const char *name, KIND kind, TYPE type, bool isGlobal, int value) {
     int realIndex = findSymbol(name);
     assert(realIndex == -1 || (symbolTable[realIndex].isGlobal && !isGlobal));
-    if(symbolCount >= TABLE_SIZE) { // fatal error
-        puts("Symbol table is full.");
-        error(0);
-        return -1;
-    }
+    if(symbolCount >= TABLE_SIZE)
+        addError(2);
     SYMBOLTABLE &cur = symbolTable[symbolCount];
     strcpy(cur.name, name);
     cur.kind = kind;

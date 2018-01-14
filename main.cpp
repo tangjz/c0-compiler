@@ -48,7 +48,7 @@ int main() {
 #else
     program();
 #endif
-    if(errorCount) {
+    if(hasError) {
         puts("Complication Error.");
         return -1;
     }
