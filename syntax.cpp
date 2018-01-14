@@ -175,12 +175,16 @@ void functionDefinitionModified(int startLineIndex, int startColumnIndex) {
     if(headerIndex != -1) { // multi-definition
         // global multi-def
         addError(37);
-        // do nothing
+        headerIndex = -1;
+    } else {
+        headerIndex = insertSymbol(identifier, FUNCTION, typeSymbol == VOIDSY ? VOID : (typeSymbol == INTSY ? INT : CHAR), true, 0);
     }
-    headerIndex = insertSymbol(identifier, FUNCTION, typeSymbol == VOIDSY ? VOID : (typeSymbol == INTSY ? INT : CHAR), true, 0);
-    int startLabel = generateLabel(headerIndex, 1), endLabel = generateLabel(headerIndex, 2);
-    setLabel(startLabel);
-    int startCodeIndex = startOfFunction(headerIndex); // allocate local variables (in stack) and temporary variables (out of stack)
+    int startLabel = headerIndex != -1 ? generateLabel(headerIndex, 1) : -1;
+    int endLabel = headerIndex != -1 ? generateLabel(headerIndex, 2) : -1;
+    if(headerIndex != -1) {
+        setLabel(startLabel);
+        startOfFunction(headerIndex); // allocate local variables (in stack) and temporary variables (out of stack)
+    }
     if(symbol != LPARSY) { // should never be reached
         addError(0); // addError(9);
         return;
@@ -203,7 +207,7 @@ void functionDefinitionModified(int startLineIndex, int startColumnIndex) {
     }
     hasReturnStatement = false;
     complexStatement(); // local variable, temporary variable managed in complex statement
-    if(symbolTable[headerIndex].type != VOID && !hasReturnStatement)
+    if(headerIndex != -1 && symbolTable[headerIndex].type != VOID && !hasReturnStatement)
         addError(25);
     if(symbol != ENDSY) {
         addError(14);
@@ -211,8 +215,10 @@ void functionDefinitionModified(int startLineIndex, int startColumnIndex) {
     } else {
         getSymbol();
     }
-    setLabel(endLabel);
-    endOfFunction(headerIndex); // free local variables (in stack) and temporary variables (out of stack)
+    if(headerIndex != -1)
+        setLabel(endLabel);
+    if(headerIndex != -1)
+        endOfFunction(headerIndex); // free local variables (in stack) and temporary variables (out of stack)
 #ifdef SEMANTIC_DEBUG
     for(int i = 1; i <= temporaryLimit; ++i) {
         SYMBOLTABLE &cur = symbolTable[symbolCount - i];
@@ -231,22 +237,25 @@ void functionDefinitionModified(int startLineIndex, int startColumnIndex) {
     lastSymbolIndex = temporaryBaseIndex;
     // hide parameters and local variables
 #ifdef SEMANTIC_DEBUG
-    for(int i = lastSymbolIndex; i > headerIndex; --i) {
-        SYMBOLTABLE &cur = symbolTable[i];
-        fprintf(fout, "hidden symbol #%d: \"%s\", %s, %s, %s, %d, #%d, %d byte(s)\n", i, cur.name,
-            cur.kind == CONST ? "constant" :
-            cur.kind == VARIABLE ? "variable" :
-            cur.kind == ARRAY ? "array" :
-            cur.kind == FUNCTION ? "function" :
-            cur.kind == PARAMETER ? "parameter variable" : "temporary variable",
-            cur.type == VOID ? "void" :
-            cur.type == INT ? "int" : "char",
-            cur.isGlobal ? "global" : "local", cur.value, cur.preIndex, cur.storeSize);
-    }
+    if(headerIndex != -1)
+        for(int i = lastSymbolIndex; i > headerIndex; --i) {
+            SYMBOLTABLE &cur = symbolTable[i];
+            fprintf(fout, "hidden symbol #%d: \"%s\", %s, %s, %s, %d, #%d, %d byte(s)\n", i, cur.name,
+                cur.kind == CONST ? "constant" :
+                cur.kind == VARIABLE ? "variable" :
+                cur.kind == ARRAY ? "array" :
+                cur.kind == FUNCTION ? "function" :
+                cur.kind == PARAMETER ? "parameter variable" : "temporary variable",
+                cur.type == VOID ? "void" :
+                cur.type == INT ? "int" : "char",
+                cur.isGlobal ? "global" : "local", cur.value, cur.preIndex, cur.storeSize);
+        }
 #endif
-    lastSymbolIndex = headerIndex;
+    if(headerIndex != -1)
+        lastSymbolIndex = headerIndex;
 #ifdef SYNTAX_DEBUG
-    fprintf(ferr, "There is a %s function \"%s\" from (line %d, column %d) to (line %d, column %d)\n", symbolTable[headerIndex].type != VOID ? (symbolTable[headerIndex].type == INT ? "int" : "char") : "void", symbolTable[headerIndex].name, startLineIndex, startColumnIndex, lastEndLineIndex, lastEndColumnIndex);
+    if(headerIndex != -1)
+        fprintf(ferr, "There is a %s function \"%s\" from (line %d, column %d) to (line %d, column %d)\n", symbolTable[headerIndex].type != VOID ? (symbolTable[headerIndex].type == INT ? "int" : "char") : "void", symbolTable[headerIndex].name, startLineIndex, startColumnIndex, lastEndLineIndex, lastEndColumnIndex);
 #endif
 }
 
@@ -286,7 +295,7 @@ void constantDefinition() {
         if(index != -1 && (headerIndex == -1 || index == headerIndex || !symbolTable[index].isGlobal)) { // multi-definition
             // global multi-def, local def as same as function, local multi-def
             addError(37);
-            // do nothing
+            index = -1;
         } else {
             index = insertSymbol(token, CONST, typeSymbol == INTSY ? INT : CHAR, headerIndex == -1);
         }
@@ -298,15 +307,15 @@ void constantDefinition() {
         } else {
             getSymbol();
         }
-        if(symbolTable[index].type == CHAR) {
+        if((index != -1 && symbolTable[index].type == CHAR) || (index == -1 && symbol == CHSY)) {
             if(symbol != CHSY) {
                 addError(19);
                 skipSymbol(NCS);
                 continue;
-            } else {
+            } else if(index != -1) {
                 symbolTable[index].value = token[0];
             }
-        } else { // symbolTable[index].type == INT
+        } else { // index != -1 && symbolTable[index].type == INT || index == -1
             int stage = 0;
             if(symbol == PLUSSY) {
                 getSymbol();
@@ -322,23 +331,26 @@ void constantDefinition() {
             } else if(stage && !number) {
                 addWarning(4);
             }
-            if(stage < 0) {
-                if(number > (unsigned)INT_MAX + 1) {
-                    symbolTable[index].value = INT_MIN;
+            if(index != -1) {
+                if(stage < 0) {
+                    if(number > (unsigned)INT_MAX + 1) {
+                        symbolTable[index].value = INT_MIN;
+                    } else {
+                        symbolTable[index].value = 0 - number;
+                    }
                 } else {
-                    symbolTable[index].value = 0 - number;
-                }
-            } else {
-                if(number > (unsigned)INT_MAX) {
-                    if(number == (unsigned)INT_MAX + 1)
-                        addWarning(5);
-                    symbolTable[index].value = INT_MAX;
-                } else {
-                    symbolTable[index].value = number;
+                    if(number > (unsigned)INT_MAX) {
+                        if(number == (unsigned)INT_MAX + 1)
+                            addWarning(5);
+                        symbolTable[index].value = INT_MAX;
+                    } else {
+                        symbolTable[index].value = number;
+                    }
                 }
             }
         }
-        defineElement(index);
+        if(index != -1)
+            defineElement(index);
         getSymbol();
     } while(symbol == COMMASY);
 #ifdef SYNTAX_DEBUG
@@ -390,10 +402,11 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
 //    getSymbol();
     // parse first variable
     int index = findSymbol(identifier), index2;
+    bool fake = false;
     if(index != -1 && (headerIndex == -1 || index == headerIndex || !symbolTable[index].isGlobal)) { // multi-definition
         // global multi-def, local def as same as function, local multi-def
         addError(37);
-        // do nothing
+        fake = true;
     }
     if(symbol == LPARSY) {
         addError(36);
@@ -407,7 +420,11 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
         } else if(number > ARRAY_MAX) {
             addWarning(6);
         }
-        index = insertSymbol(identifier, ARRAY, typeSymbol == INTSY ? INT : CHAR, headerIndex == -1, number <= ARRAY_MAX ? number : ARRAY_MAX);
+        if(!fake) {
+            index = insertSymbol(identifier, ARRAY, typeSymbol == INTSY ? INT : CHAR, headerIndex == -1, number <= ARRAY_MAX ? number : ARRAY_MAX);
+        } else {
+            index = -1;
+        }
         getSymbol();
         if(symbol != RBRASY) {
             addError(12);
@@ -420,9 +437,14 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
             // match RBRASY and skip
         }
     } else { // variable
-        index = insertSymbol(identifier, VARIABLE, typeSymbol == INTSY ? INT : CHAR, headerIndex == -1, 0);
+        if(!fake) {
+            index = insertSymbol(identifier, VARIABLE, typeSymbol == INTSY ? INT : CHAR, headerIndex == -1, 0);
+        } else {
+            index = -1;
+        }
     }
-    defineElement(index);
+    if(index != -1)
+        defineElement(index);
     // parse others
     while(symbol == COMMASY) {
         getSymbol();
@@ -433,10 +455,11 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
         }
         strcpy(identifier, token);
         index2 = findSymbol(identifier);
+        bool fake = false;
         if(index2 != -1 && (headerIndex == -1 || index2 == headerIndex || !symbolTable[index2].isGlobal)) { // multi-definition
             // global multi-def, local def as same as function, local multi-def
             addError(37);
-            // do nothing
+            fake = true;
         }
         getSymbol();
         if(symbol == LBRASY) { // array
@@ -446,7 +469,11 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
             } else if(number > ARRAY_MAX) {
                 addWarning(6);
             }
-            index2 = insertSymbol(identifier, ARRAY, symbolTable[index].type, headerIndex == -1, number <= ARRAY_MAX ? number : ARRAY_MAX);
+            if(!fake) {
+                index2 = insertSymbol(identifier, ARRAY, symbolTable[index].type, headerIndex == -1, number <= ARRAY_MAX ? number : ARRAY_MAX);
+            } else {
+                index2 = -1;
+            }
             getSymbol();
             if(symbol != RBRASY) {
                 addError(12);
@@ -459,9 +486,14 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
                 // match RBRASY and skip
             }
         } else {
-            index2 = insertSymbol(identifier, VARIABLE, symbolTable[index].type, headerIndex == -1, 0);
+            if(!fake) {
+                index2 = insertSymbol(identifier, VARIABLE, symbolTable[index].type, headerIndex == -1, 0);
+            } else {
+                index2 = -1;
+            }
         }
-        defineElement(index2);
+        if(index2 != -1)
+            defineElement(index2);
     }
 #ifdef SYNTAX_DEBUG
     fprintf(ferr, "There is a variable definition from (line %d, column %d) to (line %d, column %d)\n", startLineIndex, startColumnIndex, lastEndLineIndex, lastEndColumnIndex);
@@ -489,13 +521,14 @@ void parameterTable() {
                 if(index != -1 && (index == headerIndex || !symbolTable[index].isGlobal)) { // multi-definition in parameters
                     // local def as same as function, local multi-def
                     addError(37);
-                    // do nothing
+                    index = -1;
                 } else {
                     index = insertSymbol(token, PARAMETER, typeSymbol == INTSY ? INT : CHAR, false, 0);
                 }
                 getSymbol();
                 ++symbolTable[headerIndex].value;
-                defineElement(index);
+                if(index != -1)
+                    defineElement(index);
             } else {
                 addError(22);
                 skipSymbol(NCP);
@@ -1053,7 +1086,7 @@ void assignStatementModified(int startLineIndex, int startColumnIndex) {
         if(leftIndex == -1 || symbolTable[leftIndex].kind != ARRAY) {
             if(leftIndex != -1) {
                 addError(31);
-                // do nothing
+                leftIndex = -1;
             }
         }
         getSymbol();
@@ -1067,7 +1100,7 @@ void assignStatementModified(int startLineIndex, int startColumnIndex) {
         } else {
             getSymbol();
         }
-    } else if(symbolTable[leftIndex].kind == CONST || symbolTable[leftIndex].kind == FUNCTION) {
+    } else if(leftIndex != -1 && (symbolTable[leftIndex].kind == CONST || symbolTable[leftIndex].kind == FUNCTION)) {
         addError(33);
         // do nothing
     }
@@ -1079,18 +1112,18 @@ void assignStatementModified(int startLineIndex, int startColumnIndex) {
         getSymbol();
         rightIndex = expression();
     }
-    if(symbolTable[leftIndex].type == CHAR && symbolTable[rightIndex].type == INT) { // optional
+    if(leftIndex != -1 && symbolTable[leftIndex].type == CHAR && symbolTable[rightIndex].type == INT) { // optional
         addWarning(10);
     }
-    if(symbolTable[leftIndex].kind == ARRAY) {
-        storeArrayElement(leftIndex, leftOffsetIndex, rightIndex);
-    } else { // VARIABLE or PARAMETER
-        arithmeticOpeation(ASSIGNSY, rightIndex, -1, leftIndex);
+    if(leftIndex != -1) {
+        if(symbolTable[leftIndex].kind == ARRAY) {
+            storeArrayElement(leftIndex, leftOffsetIndex, rightIndex);
+        } else { // VARIABLE or PARAMETER
+            arithmeticOpeation(ASSIGNSY, rightIndex, -1, leftIndex);
+        }
     }
     revokeTemporarySymbol(rightIndex);
-    if(leftOffsetIndex != -1) {
-        revokeTemporarySymbol(leftOffsetIndex);
-    }
+    revokeTemporarySymbol(leftOffsetIndex);
     revokeTemporarySymbol(leftIndex);
 #ifdef SYNTAX_DEBUG
     fprintf(ferr, "There is an assign statement from (line %d, column %d) to (line %d, column %d)\n", startLineIndex, startColumnIndex, lastEndLineIndex, lastEndColumnIndex);
