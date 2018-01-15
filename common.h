@@ -38,7 +38,7 @@ const int BYTE_PER_CHAR = 1;
 #define CONSTANT_EXPRESS
 
 // switches for optimization
-// #define OPTIMIZATION
+#define OPTIMIZATION
 #ifdef OPTIMIZATION
     #define COMMON_SUBEXPRESSION_ELIMINATION // compulsory
     #define CONSTANT_FOLDING_PROPAGAION

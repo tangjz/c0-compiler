@@ -427,7 +427,9 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
     }
     if(symbol == LBRASY) { // array
         getSymbol();
-        if(symbol != NUMSY || !number) {
+        if(symbol != NUMSY) {
+            addError(20);
+        } else if(!number) {
             addWarning(4);
         } else if(number > ARRAY_MAX) {
             addWarning(6);
@@ -437,7 +439,8 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
         } else {
             index = -1;
         }
-        getSymbol();
+        if(symbol != RBRASY)
+            getSymbol();
         if(symbol != RBRASY) {
             addError(12);
             // do nothing
@@ -877,7 +880,7 @@ int factor() {
             stage = -1;
         }
         if(symbol != NUMSY) {
-            addError(20);
+            addError(stage ? 20 : 44);
             // do nothing
             return -1;
         } else if(stage && !number) {
@@ -956,13 +959,12 @@ int valueParameterTable(int calleeIndex) {
         while(true) {
             int tempIndex = expression();
             ++parameterCount;
-            if(calleeIndex != -1 && tempIndex != -1) {
+            if(calleeIndex != -1 && tempIndex != -1 && parameterCount <= symbolTable[calleeIndex].value) {
                 if(symbolTable[tempIndex].type != symbolTable[calleeIndex + parameterCount].type)
                     addWarning(symbolTable[tempIndex].type == INT ? 10 : 11);
                 formatterTemporarySymbol(tempIndex, symbolTable[calleeIndex + parameterCount].type);
-            }
-            if(tempIndex != -1)
                 pushParameter(tempIndex);
+            }
             if(symbol != COMMASY)
                 break;
             getSymbol();
@@ -1004,42 +1006,44 @@ void forStatement() {
     } else {
         getSymbol();
     }
+    int index = -1;
     if(symbol != IDSY && symbol != MAINSY) {
         addError(21);
         skipSymbol(NSP);
-    }
-    int index = findSymbol(token);
-    if(index == -1) {
-        addError(31);
-        // do nothing
     } else {
-        if(!isVariable(index))
-            addError(33);
-        getSymbol();
-    }
-    if(symbol != ASSIGNSY) {
-        addError(17);
-        skipSymbol(NSP);
-    } else {
-        getSymbol();
-        int initIndex = expression();
-        if(index != -1 && initIndex != -1 && isVariable(index))
-            arithmeticOpeation(ASSIGNSY, initIndex, -1, index);
-        revokeTemporarySymbol(initIndex);
-        jumpLabel(loopBlockLabel);
-        if(symbol != SEMISY) {
-            addError(15);
+        index = findSymbol(token);
+        if(index == -1) {
+            addError(31);
             // do nothing
         } else {
+            if(!isVariable(index))
+                addError(33);
             getSymbol();
         }
+        if(symbol != ASSIGNSY) {
+            addError(17);
+            skipSymbol(NSP);
+        } else {
+            getSymbol();
+            int initIndex = expression();
+            if(index != -1 && initIndex != -1 && isVariable(index))
+                arithmeticOpeation(ASSIGNSY, initIndex, -1, index);
+            revokeTemporarySymbol(initIndex);
+            jumpLabel(loopBlockLabel);
+        }
+    }
+    if(symbol != SEMISY) {
+        addError(15);
+        // do nothing
+    } else {
+        getSymbol();
     }
     setLabel(loopConditionLabel);
     checkingIndex = index;
     checkingResult = false;
     condition(loopEndLabel);
     jumpLabel(loopBlockLabel);
-    if(!checkingResult)
+    if(index != -1 && !checkingResult)
         addError(23);
     checkingIndex = -1;
     if(symbol != SEMISY) {
@@ -1445,11 +1449,16 @@ void returnStatement() {
             hasReturnStatement = true;
         }
     } else {
-        if(symbol != LPARSY) {
+        if(symbol == SEMISY) {
             addError(40);
             skipSymbol(NS);
         } else {
-            getSymbol();
+            if(symbol != LPARSY) {
+                addError(9);
+                // do nothing
+            } else {
+                getSymbol();
+            }
             int returnIndex = expression();
             if(symbol != RPARSY) {
                 addError(10);

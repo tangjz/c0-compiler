@@ -20,6 +20,7 @@ int main() {
             puts("Invalid.");
         }
     }
+    filePath[0] = '\0';
     while(true) {
         printf("Please type the path of output source file (e.g. a.asm): ");
         if(gets(filePath) != NULL && (access(filePath, 2) != -1 || access(filePath, 0) == -1)) {
@@ -29,6 +30,7 @@ int main() {
             puts("Invalid.");
         }
     }
+    filePath[0] = '\0';
     while(true) {
         printf("Please type the path of auxiliary source file (e.g. a.txt): ");
         if(gets(filePath) != NULL && (access(filePath, 2) != -1 || access(filePath, 0) == -1)) {

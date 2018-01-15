@@ -33,24 +33,46 @@ void freeReg(int id) {
     }
 }
 
-// TODO: peephole optimization also should be implemented in here
+#ifdef PEEPHOLE_OPTIMIZATION
+char lastOp[TOKEN_MAX];
+int lastRegMemRt, lastRegMemRs, lastRegMemOffset;
+#endif
 void printReg(const char *op, int rd) { // mflo
     assert(strcmp(op, "mflo") == 0);
     fprintf(fout, "\t" "%s %s" "\n", op, regName[rd]);
+#ifdef PEEPHOLE_OPTIMIZATION
+    strcpy(lastOp, op);
+#endif
 }
 void printRegReg(const char *op, int rs, int rt) { // mult, div
     fprintf(fout, "\t" "%s %s, %s" "\n", op, regName[rs], regName[rt]);
+#ifdef PEEPHOLE_OPTIMIZATION
+    strcpy(lastOp, op);
+#endif
 }
 void printRegReg(const char *op, int rd, int rs, int rt) { // add, sub
+#ifdef PEEPHOLE_OPTIMIZATION
+    if((rt == $zero && rd == rs) || (rs == $zero && rd == rt && strcmp(op, "add") == 0))
+        return;
+#endif
     fprintf(fout, "\t" "%s %s, %s, %s" "\n", op, regName[rd], regName[rs], regName[rt]);
+#ifdef PEEPHOLE_OPTIMIZATION
+    strcpy(lastOp, op);
+#endif
 }
 void printRegImm(const char *op, int rt, int offset) { // li
     assert(strcmp(op, "li") == 0);
     fprintf(fout, "\t" "%s %s, %d" "\n", op, regName[rt], offset);
+#ifdef PEEPHOLE_OPTIMIZATION
+    strcpy(lastOp, op);
+#endif
 }
 void printRegImm(const char *op, int rt, const char *label) { // la
     assert(strcmp(op, "la") == 0);
     fprintf(fout, "\t" "%s %s, %s" "\n", op, regName[rt], label);
+#ifdef PEEPHOLE_OPTIMIZATION
+    strcpy(lastOp, op);
+#endif
 }
 void printRegImm(const char *op, int rt, int rs, int offset) { // addi, subi
     if(offset > OFFSET_MAX) {
@@ -60,11 +82,20 @@ void printRegImm(const char *op, int rt, int rs, int offset) { // addi, subi
         freeReg(tp);
     } else if(offset) { // add -> addi
         fprintf(fout, "\t" "%si %s, %s, %d" "\n", op, regName[rt], regName[rs], offset);
+#ifdef PEEPHOLE_OPTIMIZATION
+        strcpy(lastOp, op);
+        strcat(lastOp, "i");
+#endif
     } else {
         printRegReg(op, rt, rs, $zero);
     }
 }
 void printRegMem(const char *op, int rt, int rs, int offset) { // lb, lw, sb, sw
+#ifdef PEEPHOLE_OPTIMIZATION
+    if(lastOp[1] == op[1] && (lastOp[0] == 'l' || lastOp[0] == 's') && lastOp[0] != op[0]
+       && lastRegMemRt == rt && lastRegMemRs == rs && lastRegMemOffset == offset)
+        return;
+#endif
     if(offset > OFFSET_MAX) {
         int tp = newReg();
         printRegImm("li", tp, offset);
@@ -74,6 +105,12 @@ void printRegMem(const char *op, int rt, int rs, int offset) { // lb, lw, sb, sw
     } else {
         fprintf(fout, "\t" "%s %s, %d(%s)" "\n", op, regName[rt], offset, regName[rs]);
     }
+#ifdef PEEPHOLE_OPTIMIZATION
+        strcpy(lastOp, op);
+        lastRegMemRt = rt;
+        lastRegMemRs = rs;
+        lastRegMemOffset = offset;
+#endif
 }
 void printLabel(const char *label) { // label:
     static char token[TOKEN_MAX];
@@ -85,6 +122,9 @@ void printLabel(const char *label) { // label:
 }
 void printJump(const char *op, int rs) { // jr
     fprintf(fout, "\t" "%s %s" "\n", op, regName[rs]);
+#ifdef PEEPHOLE_OPTIMIZATION
+        strcpy(lastOp, op);
+#endif
 }
 void printJump(const char *op, const char *label) { // j, jal
     static char token[TOKEN_MAX];
@@ -93,6 +133,9 @@ void printJump(const char *op, const char *label) { // j, jal
         if(*ptr == '@')
             *ptr = '_';
     fprintf(fout, "\t" "%s %s" "\n", op, token);
+#ifdef PEEPHOLE_OPTIMIZATION
+        strcpy(lastOp, op);
+#endif
 }
 void printBranch(const char *op, int rs, int rt, const char *label) { // bne, beq, bge, bgt, ble, blt
     static char token[TOKEN_MAX];
@@ -101,9 +144,15 @@ void printBranch(const char *op, int rs, int rt, const char *label) { // bne, be
         if(*ptr == '@')
             *ptr = '_';
     fprintf(fout, "\t" "%s %s, %s, %s" "\n", op, regName[rs], regName[rt], token);
+#ifdef PEEPHOLE_OPTIMIZATION
+        strcpy(lastOp, op);
+#endif
 }
 void printSyscall() {
     fprintf(fout, "\t" "syscall" "\n");
+#ifdef PEEPHOLE_OPTIMIZATION
+        strcpy(lastOp, "syscall");
+#endif
 }
 
 int symbolOffset[TABLE_SIZE]; // offset from $gp or $sp
