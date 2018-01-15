@@ -38,11 +38,13 @@ const int BYTE_PER_CHAR = 1;
 #define CONSTANT_EXPRESS
 
 // switches for optimization
-#define OPTIMIZATION
-#define COMMON_SUBEXPRESSION_ELIMINATION // compulsory
-#define CONSTANT_FOLDING_PROPAGAION
-#define PEEPHOLE_OPTIMIZATION
-#define DEAD_CODE_ELIMINATION
-#define GLOBAL_REGISTER_ALLOCATION // compulsory
+// #define OPTIMIZATION
+#ifdef OPTIMIZATION
+    #define COMMON_SUBEXPRESSION_ELIMINATION // compulsory
+    #define CONSTANT_FOLDING_PROPAGAION
+    #define PEEPHOLE_OPTIMIZATION
+    #define DEAD_CODE_ELIMINATION
+    #define GLOBAL_REGISTER_ALLOCATION // compulsory
+#endif
 
 #endif // COMMON_H_INCLUDED

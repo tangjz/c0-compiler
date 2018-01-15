@@ -14,7 +14,7 @@ const char *errMsg[] = {
     "missing '=' after '!'",
     "missing '('",
     "missing ')'",
-    "missing '=' or '(' or '['",
+    "missing '['",
     "missing ']'",
     "missing '{'",
     "missing '}'",
@@ -46,10 +46,11 @@ const char *errMsg[] = {
     "return no expression of non-void function",
     "unknown type to get its value",
     "duplicated case",
+    "missing 'default'",
     NULL
 };
 void addError(int index) {
-    if(index >= 1 && index <= 42) {
+    if(index >= 1 && index <= 43) {
         printf("Error (Line %d, Column %d): %s\n", currentFrontLineIndex, currentFrontColumnIndex, errMsg[index]);
 #ifdef ERROR_DEBUG
         fprintf(ferr, "Error (Line %d, Column %d): %s\n", currentFrontLineIndex, currentFrontColumnIndex, errMsg[index]);

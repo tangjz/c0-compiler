@@ -617,6 +617,8 @@ void statement() {
                     addError(11);
                 } else if(symbolTable[index].kind == FUNCTION) {
                     addError(9);
+                    if(symbol != RPARSY)
+                        addError(10);
                 } else {
                     addError(17);
                 }
@@ -963,7 +965,7 @@ int valueParameterTable(int calleeIndex) {
         // do nothing
         return -1;
     }
-    if(calleeIndex != -1 && returnIndex != -1)
+    if(calleeIndex != -1)
         userCall(calleeIndex, returnIndex);
     // after callee finished, free (not real, just revoke) parameters (caller's temporary variable)
     while(parameterCount) {
@@ -1399,8 +1401,8 @@ void caseSubstatement(int expIndex, int switchEndLabel, int caseLabelIndex, set<
 
 void defaultSubstatement() {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
-    if(symbol != DEFAULTSY) { // should never be reached
-        addError(0);
+    if(symbol != DEFAULTSY) {
+        addError(43);
         return;
     } else {
         getSymbol();
@@ -1450,10 +1452,11 @@ void returnStatement() {
                 addWarning(symbolTable[returnIndex].type == INT ? 10 : 11);
                 formatterTemporarySymbol(returnIndex, symbolTable[headerIndex].type);
             }
-            if(returnIndex != -1)
+            if(returnIndex != -1) {
                 userReturn(returnIndex);
+                hasReturnStatement = true;
+            }
             revokeTemporarySymbol(returnIndex);
-            hasReturnStatement = true;
         }
     }
 #ifdef SYNTAX_DEBUG
