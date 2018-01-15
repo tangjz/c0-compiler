@@ -36,6 +36,8 @@
 		<Unit filename="error.cpp" />
 		<Unit filename="error.h" />
 		<Unit filename="main.cpp" />
+		<Unit filename="optimize.cpp" />
+		<Unit filename="optimize.h" />
 		<Unit filename="pseudo.cpp" />
 		<Unit filename="pseudo.h" />
 		<Unit filename="scanner.cpp" />

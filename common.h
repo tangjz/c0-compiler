@@ -21,11 +21,12 @@ const int BYTE_PER_INT = 4;
 const int BYTE_PER_CHAR = 1;
 
 // switches for debugging
+#define ERROR_DEBUG // to ferr
 // #define SCANNER_DEBUG // to fout
 // #define SYNTAX_DEBUG // to ferr
 // #define SEMANTIC_DEBUG // to fout
-// #define FOURCODE_DEBUG // to ferr
-#define FOURCODE_OUTPUT // to ferr
+// #define QUADCODE_DEBUG // to ferr
+#define QUADCODE_OUTPUT // to ferr
 #define TRANSFORM_DEBUG // to fout
 #define OPTIMIZE_DEBUG // to ferr
 
@@ -38,11 +39,10 @@ const int BYTE_PER_CHAR = 1;
 
 // switches for optimization
 #define OPTIMIZATION
-//#define COMMON_SUBEXPRESSION_ELIMINATION // compulsory
-//#define CONSTANT_FOLDING_PROPAGAION
-//#define VARIABLE_COPY_PROPAGAION // compulsory
-//#define PEEPHOLE_OPTIMIZATION
-//#define DEAD_CODE_ELIMINATION
-//#define GLOBAL_REGISTER_ALLOCATION // compulsory
+#define COMMON_SUBEXPRESSION_ELIMINATION // compulsory
+#define CONSTANT_FOLDING_PROPAGAION
+#define PEEPHOLE_OPTIMIZATION
+#define DEAD_CODE_ELIMINATION
+#define GLOBAL_REGISTER_ALLOCATION // compulsory
 
 #endif // COMMON_H_INCLUDED

@@ -114,7 +114,7 @@ int arithmeticOpeation(SYMBOL oper, int leftIndex, int rightIndex, int destinati
     }
     assert(destinationIndex >= 0 && destinationIndex < symbolCount && isVariable(destinationIndex));
     strcpy(cur.dst, symbolTable[destinationIndex].name);
-#ifdef FOURCODE_DEBUG
+#ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
     return codeCount++;
@@ -140,7 +140,7 @@ int defineElement(int index) { // def kind, type, value, name
         sprintf(cur.rht, "%d", symbolTable[index].value);
     }
     strcpy(cur.dst, symbolTable[index].name);
-#ifdef FOURCODE_DEBUG
+#ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
     return codeCount++;
@@ -155,7 +155,7 @@ int setLabel(int index) { // label, labelString, ,
     strcpy(cur.lft, labelTable[index]);
     strcpy(cur.rht, ""); // optional
     strcpy(cur.dst, ""); // optional
-#ifdef FOURCODE_DEBUG
+#ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
     return codeCount++;
@@ -170,7 +170,7 @@ int jumpLabel(int index) { // j, , , labelString
     strcpy(cur.rht, ""); // optional
     assert(index >= 0 && index < labelCount);
     strcpy(cur.dst, labelTable[index]);
-#ifdef FOURCODE_DEBUG
+#ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
     return codeCount++;
@@ -215,7 +215,7 @@ int branchLabel(SYMBOL oper, int leftIndex, int rightIndex, int falseLabelIndex)
     }
     assert(falseLabelIndex >= 0 && falseLabelIndex < labelCount);
     strcpy(cur.dst, labelTable[falseLabelIndex]);
-#ifdef FOURCODE_DEBUG
+#ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
     return codeCount++;
@@ -230,7 +230,7 @@ int startOfFunction(int functionIndex) { // function, name, type,
     strcpy(cur.lft, symbolTable[functionIndex].name);
     strcpy(cur.rht, symbolTable[functionIndex].type == VOID ? "void" : (symbolTable[functionIndex].type == INT ? "int" : "char"));
     strcpy(cur.dst, ""); // optional
-#ifdef FOURCODE_DEBUG
+#ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
     return codeCount++;
@@ -245,7 +245,7 @@ int endOfFunction(int functionIndex) { // endFunction, name, type,
     strcpy(cur.lft, symbolTable[functionIndex].name);
     strcpy(cur.rht, symbolTable[functionIndex].type == VOID ? "void" : (symbolTable[functionIndex].type == INT ? "int" : "char"));
     strcpy(cur.dst, ""); // optional
-#ifdef FOURCODE_DEBUG
+#ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
     return codeCount++;
@@ -273,7 +273,7 @@ int sysCall(int type, int src, int dst) { // syscall, serviceNumber, source, des
     } else {
         assert(false);
     }
-#ifdef FOURCODE_DEBUG
+#ifdef QUADCODE_DEBUG
     if(type == 4) {
         fprintf(ferr, "#%d: %s, %s, \"", codeCount, cur.op, cur.lft);
         for(int i = 0; cur.rht[i]; ++i) {
@@ -304,7 +304,7 @@ int userCall(int calleeIndex, int returnIndex) { // call, function, temporaryCou
     } else {
         strcpy(cur.dst, "");
     }
-#ifdef FOURCODE_DEBUG
+#ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
     return codeCount++;
@@ -323,7 +323,7 @@ int userReturn(int returnIndex) { // return, result, ,
     }
     strcpy(cur.rht, ""); // optional
     strcpy(cur.dst, ""); // optional
-#ifdef FOURCODE_DEBUG
+#ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
     return codeCount++;
@@ -337,7 +337,7 @@ int storeImmediate(int index, int value) { // =v, value, , variable
     sprintf(cur.lft, "%d", value);
     assert(index >= 0 && index < symbolCount && isVariable(index));
     strcpy(cur.dst, symbolTable[index].name);
-#ifdef FOURCODE_DEBUG
+#ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
     return codeCount++;
@@ -370,7 +370,7 @@ int storeArrayElement(int arrayIndex, int offsetIndex, int sourceIndex) { // []=
 #endif
     assert(arrayIndex >= 0 && arrayIndex < symbolCount && symbolTable[arrayIndex].kind == ARRAY);
     strcpy(cur.dst, symbolTable[arrayIndex].name);
-#ifdef FOURCODE_DEBUG
+#ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
     return codeCount++;
@@ -395,7 +395,7 @@ int loadArrayElement(int arrayIndex, int offsetIndex, int destinationIndex) { //
 #endif
     assert(destinationIndex >= 0 && destinationIndex < symbolCount && isVariable(destinationIndex));
     strcpy(cur.dst, symbolTable[destinationIndex].name);
-#ifdef FOURCODE_DEBUG
+#ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
     return codeCount++;
@@ -418,7 +418,7 @@ int pushParameter(int index) { // pushPara, (type), name,
     }
 #endif
     strcpy(cur.dst, ""); // optional
-#ifdef FOURCODE_DEBUG
+#ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
     return codeCount++;
@@ -553,7 +553,6 @@ void printCodeList() {
             op[len] = '\0';
             fprintf(ferr, "IF %s %s %s GOTO %s", cur.lft, op, cur.rht, cur.dst);
         } else if(strcmp(cur.op, "syscall") == 0) { // syscall, serviceNumber, source, destination
-            // TODO
             int serviceNumber = 0;
             sscanf(cur.lft, "%d", &serviceNumber);
             switch(serviceNumber) {
@@ -584,7 +583,7 @@ void printCodeList() {
         } else if(strcmp(cur.op, "function") == 0) { // function, name, type,
             fprintf(ferr, "%s %s()", cur.rht, cur.lft);
         } else if(strcmp(cur.op, "endFunction") == 0) { // endFunction, name, type,
-            // fprintf(ferr, "END OF %s %s()", cur.rht, cur.lft);
+            fprintf(ferr, "END OF %s %s()", cur.rht, cur.lft);
         } else if(strcmp(cur.op, "call") == 0) { // call, function, temporaryCount, result
             fprintf(ferr, "call %s", cur.lft);
             if(cur.dst[0])

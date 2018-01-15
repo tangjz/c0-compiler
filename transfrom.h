@@ -4,6 +4,7 @@
 #include "common.h"
 #include "table.h"
 #include "pseudo.h"
+#include "optimize.h"
 #include "error.h"
 
 extern void convertMIPS();

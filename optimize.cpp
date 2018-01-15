@@ -85,7 +85,9 @@ void divideBlocks() { // with dead code elimination
 int newCodeCount;
 QUADCODE newCodeList[CODE_MAX];
 void commonSubexpressionElimination() { // with constant folding propagation
-
+    // TODO
+    codeCount = newCodeCount;
+    memcpy(codeList, newCodeList, newCodeCount * sizeof(QUADCODE));
 }
 
 const int maxs = (((TABLE_SIZE - 1) >> 6) + 1) | 1;

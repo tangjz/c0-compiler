@@ -41,7 +41,7 @@ const char *errMsg[] = {
     "invalid variable definition",
     "invalid function definition",
     "duplicated definition",
-    "mismatched parameter",
+    "mismatched parameters",
     "return expression of void function",
     "return no expression of non-void function",
     NULL
@@ -49,10 +49,21 @@ const char *errMsg[] = {
 void addError(int index) {
     if(index >= 1 && index <= 41) {
         printf("Error (Line %d, Column %d): %s\n", currentFrontLineIndex, currentFrontColumnIndex, errMsg[index]);
+#ifdef ERROR_DEBUG
+        fprintf(ferr, "Error (Line %d, Column %d): %s\n", currentFrontLineIndex, currentFrontColumnIndex, errMsg[index]);
+#endif
         hasError = true;
+    } else {
+        printf("Error (Line %d, Column %d): %s\n", currentFrontLineIndex, currentFrontColumnIndex, "unknown error");
+#ifdef ERROR_DEBUG
+        fprintf(ferr, "Error (Line %d, Column %d): %s\n", currentFrontLineIndex, currentFrontColumnIndex, "unknown error");
+#endif
     }
     if(index <= 5) {
         printf("Fatal error occurred during compilation.\n");
+#ifdef ERROR_DEBUG
+        fprintf(ferr, "Fatal error occurred during compilation.\n");
+#endif
         fclose(fin);
         fclose(fout);
         fclose(ferr);
@@ -80,7 +91,13 @@ const char *warnMsg[] = {
 void addWarning(int index) {
     if(index >= 1 && index <= 11) {
         printf("Warning (Line %d, Column %d): %s\n", currentFrontLineIndex, currentFrontColumnIndex, warnMsg[index]);
+#ifdef ERROR_DEBUG
+        fprintf(ferr, "Warning (Line %d, Column %d): %s\n", currentFrontLineIndex, currentFrontColumnIndex, warnMsg[index]);
+#endif
     } else {
         printf("Warning (Line %d, Column %d): %s\n", currentFrontLineIndex, currentFrontColumnIndex, "unknown warning");
+#ifdef ERROR_DEBUG
+        fprintf(ferr, "Warning (Line %d, Column %d): %s\n", currentFrontLineIndex, currentFrontColumnIndex, "unknown warning");
+#endif
     }
 }

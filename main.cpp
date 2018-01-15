@@ -59,7 +59,7 @@ int main() {
         commonSubexpressionElimination();
     #endif
 #endif
-#ifdef FOURCODE_OUTPUT
+#ifdef QUADCODE_OUTPUT
     printCodeList(); // print to fout
 #endif
     convertMIPS();

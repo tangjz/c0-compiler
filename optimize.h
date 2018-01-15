@@ -5,6 +5,9 @@
 #include "table.h"
 #include "pseudo.h"
 
+extern int blockCount, blockStartIndex[BLOCK_MAX];
+extern bool blockReachable[BLOCK_MAX];
+
 extern void divideBlocks(); // with dead code elimination
 extern void commonSubexpressionElimination(); // with constant folding propagation
 extern void activeVariableAnalysis(); // just initialization

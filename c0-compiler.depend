@@ -1,15 +1,15 @@
 # depslib dependency file v1.0
-1515892116 source:c:\users\tangjz2\desktop\c0-compiler\error.cpp
+1515981452 source:c:\users\tangjz2\desktop\c0-compiler\error.cpp
 	"error.h"
 
 1515892441 c:\users\tangjz2\desktop\c0-compiler\error.h
 	"common.h"
 	"scanner.h"
 
-1515970816 c:\users\tangjz2\desktop\c0-compiler\common.h
+1515981301 c:\users\tangjz2\desktop\c0-compiler\common.h
 	<bits/stdc++.h>
 
-1515970753 source:c:\users\tangjz2\desktop\c0-compiler\main.cpp
+1515980673 source:c:\users\tangjz2\desktop\c0-compiler\main.cpp
 	"common.h"
 	"error.h"
 	"scanner.h"
@@ -33,7 +33,7 @@
 	"table.h"
 	"pseudo.h"
 
-1515964831 source:c:\users\tangjz2\desktop\c0-compiler\syntax.cpp
+1515978638 source:c:\users\tangjz2\desktop\c0-compiler\syntax.cpp
 	"syntax.h"
 
 1515970532 source:c:\users\tangjz2\desktop\c0-compiler\table.cpp
@@ -50,19 +50,20 @@
 	"scanner.h"
 	"error.h"
 
-1515885027 c:\users\tangjz2\desktop\c0-compiler\transfrom.h
+1515981507 c:\users\tangjz2\desktop\c0-compiler\transfrom.h
 	"common.h"
 	"table.h"
 	"pseudo.h"
+	"optimize.h"
 	"error.h"
 
-1515972977 source:c:\users\tangjz2\desktop\c0-compiler\pseudo.cpp
+1515980651 source:c:\users\tangjz2\desktop\c0-compiler\pseudo.cpp
 	"pseudo.h"
 
 1515972857 source:c:\users\tangjz2\desktop\c0-compiler\transform.cpp
 	"transfrom.h"
 
-1515881269 c:\users\tangjz2\desktop\c0-compiler\optimize.h
+1515981553 c:\users\tangjz2\desktop\c0-compiler\optimize.h
 	"common.h"
 	"table.h"
 	"pseudo.h"

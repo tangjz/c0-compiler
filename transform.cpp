@@ -13,6 +13,7 @@ const char *regName[REG_MAX] = {
     "$t8", "$t9", "$k0", "$k1", "$gp", "$sp", "$fp", "$ra"};
 const int $zero = 0, $v0 = 2, $a0 = 4, $gp = 28, $sp = 29, $ra = 31;
 const int localRegLow = 8, localRegUpp = 25;
+int regReg[REG_MAX];
 bool regAvailable[REG_MAX];
 
 //TODO: global register allocation should be implemented in here

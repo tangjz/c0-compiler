@@ -35,10 +35,10 @@ static bool hasReturnStatement;
 static int ifCount, loopCount, switchCount;
 
 // skip tool: only used for syntax
-enum SKIP {NTH, NTYP, NCTYP, NCS, NTYPST, NCP, NSP, NC, NS};
+enum SKIP {NOP, NTYP, NCTYP, NCS, NTYPST, NCP, NSP, NC, NS};
 void skipSymbol(SKIP type) {
     switch(type) {
-        case NTH: { // do nothing
+        case NOP: { // do nothing
             break;
         }
         case NTYP: { // before next type
