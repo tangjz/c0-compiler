@@ -33,7 +33,7 @@
 	"table.h"
 	"pseudo.h"
 
-1515978638 source:c:\users\tangjz2\desktop\c0-compiler\syntax.cpp
+1516037397 source:c:\users\tangjz2\desktop\c0-compiler\syntax.cpp
 	"syntax.h"
 
 1515970532 source:c:\users\tangjz2\desktop\c0-compiler\table.cpp
@@ -60,7 +60,7 @@
 1515980651 source:c:\users\tangjz2\desktop\c0-compiler\pseudo.cpp
 	"pseudo.h"
 
-1515972857 source:c:\users\tangjz2\desktop\c0-compiler\transform.cpp
+1515982095 source:c:\users\tangjz2\desktop\c0-compiler\transform.cpp
 	"transfrom.h"
 
 1515981553 c:\users\tangjz2\desktop\c0-compiler\optimize.h
@@ -68,6 +68,6 @@
 	"table.h"
 	"pseudo.h"
 
-1515883443 source:c:\users\tangjz2\desktop\c0-compiler\optimize.cpp
+1515981626 source:c:\users\tangjz2\desktop\c0-compiler\optimize.cpp
 	"optimize.h"
 
