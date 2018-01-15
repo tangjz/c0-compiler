@@ -811,15 +811,20 @@ int factor() {
             if(index == -1) {
                 addError(31);
                 return -1;
-            } // now, index != -1
+            }
             if(symbol == LBRASY) { // array
                 getSymbol();
-                returnIndex = generateTemporarySymbol(symbolTable[index].type); // may be CHAR
+                if(symbol[index].kind != ARRAY) {
+                    addError(41);
+                    index = -1;
+                }
+                if(index != -1)
+                    returnIndex = generateTemporarySymbol(symbolTable[index].type); // may be CHAR
                 int offsetIndex = expression();
                 if(offsetIndex != -1 && symbolTable[offsetIndex].type != INT)
                     formatterTemporarySymbol(offsetIndex, INT);
                 // WARNING: if return value is less than zero or large than or equal to the size of array, undefined behavior would be caused
-                if(offsetIndex != -1 && returnIndex != -1)
+                if(index != -1 && offsetIndex != -1 && returnIndex != -1)
                     loadArrayElement(index, offsetIndex, returnIndex);
                 revokeTemporarySymbol(offsetIndex);
                 if(symbol != RBRASY) {
@@ -829,7 +834,11 @@ int factor() {
                     getSymbol();
                 }
             } else {
-                returnIndex = index;
+                if(!hasValue(index)) {
+                    addError(41);
+                } else {
+                    returnIndex = index;
+                }
             }
         }
     } else if(symbol == LPARSY) { // expression
@@ -900,7 +909,7 @@ int callStatementModified(int startLineIndex, int startColumnIndex) {
     int index = findSymbol(identifier), returnIndex = -1;
     if(index == -1 || symbolTable[index].kind != FUNCTION) {
         addError(32);
-        // do nothing
+        index = -1;
     } else if(strcmp(symbolTable[index].name, "main") == 0) {
         addWarning(8);
     }
@@ -993,6 +1002,8 @@ void forStatement() {
         extraVariable = true; // allocate a temporarily variable to replace
         index = generateTemporarySymbol(INT, 0);
     } else {
+        if(!isVariable())
+            addError(33);
         getSymbol();
     } // now, index != -1
     if(symbol != ASSIGNSY) {
@@ -1001,7 +1012,7 @@ void forStatement() {
     } else {
         getSymbol();
         int initIndex = expression();
-        if(initIndex != -1)
+        if(initIndex != -1 && isVariable(index))
             arithmeticOpeation(ASSIGNSY, initIndex, -1, index);
         revokeTemporarySymbol(initIndex);
         jumpLabel(loopBlockLabel);
@@ -1061,10 +1072,12 @@ void forStatement() {
                                 addWarning(5);
                         }
                         int tempIndex = generateTemporarySymbol(INT, number < (unsigned)INT_MAX ? number : INT_MAX);
-                        if(typeSymbol == PLUSSY) {
-                            arithmeticOpeation(PLUSSY, index, tempIndex, index);
-                        } else { // MINUSSY
-                            arithmeticOpeation(MINUSSY, index, tempIndex, index);
+                        if(isVariable(index)) {
+                            if(typeSymbol == PLUSSY) {
+                                arithmeticOpeation(PLUSSY, index, tempIndex, index);
+                            } else { // MINUSSY
+                                arithmeticOpeation(MINUSSY, index, tempIndex, index);
+                            }
                         }
                         revokeTemporarySymbol(tempIndex);
                         getSymbol();
@@ -1124,7 +1137,7 @@ void assignStatementModified(int startLineIndex, int startColumnIndex) {
         } else {
             getSymbol();
         }
-    } else if(leftIndex != -1 && (symbolTable[leftIndex].kind == CONST || symbolTable[leftIndex].kind == FUNCTION)) {
+    } else if(leftIndex != -1 && !isVariable(leftIndex)) {
         addError(33);
         // do nothing
     }
@@ -1143,7 +1156,7 @@ void assignStatementModified(int startLineIndex, int startColumnIndex) {
         if(symbolTable[leftIndex].kind == ARRAY) {
             if(leftOffsetIndex != -1)
                 storeArrayElement(leftIndex, leftOffsetIndex, rightIndex);
-        } else { // VARIABLE or PARAMETER
+        } else if(isVariable(leftIndex)) {
             arithmeticOpeation(ASSIGNSY, rightIndex, -1, leftIndex);
         }
     }
@@ -1342,23 +1355,24 @@ void caseSubstatement(int expIndex, int switchEndLabel, int caseLabelIndex) {
                 addWarning(4);
             }
             caseIndex = generateTemporarySymbol(INT);
+            int caseValue;
             if(stage < 0) {
                 if(number > (unsigned)INT_MAX + 1) {
-                    symbolTable[caseIndex].value = INT_MIN;
+                    caseValue = INT_MIN;
                 } else {
-                    symbolTable[caseIndex].value = 0 - number;
+                    caseValue = 0 - number;
                 }
             } else {
                 if(number > (unsigned)INT_MAX) {
                     if(number == (unsigned)INT_MAX + 1)
                         addWarning(5);
-                    symbolTable[caseIndex].value = INT_MAX;
+                    caseValue = INT_MAX;
                 } else {
-                    symbolTable[caseIndex].value = number;
+                    caseValue = number;
                 }
             }
             getSymbol();
-            storeImmediate(caseIndex, symbolTable[caseIndex].value);
+            storeImmediate(caseIndex, caseValue);
         }
     }
     if(symbol != COLONSY) {

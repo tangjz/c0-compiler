@@ -39,7 +39,7 @@ int findFunctionLabel(int functionIndex, int order) {
     return findLabel(labelToken);
 }
 int generateLabel(SYMBOL type, int order, int typeIndex, int superLabel) {
-    if(!checkLabelLimit())
+    if(!checkLabelLimit() || headerIndex == -1)
         return -1;
     char *cur = labelTable[labelCount];
     assert(headerIndex >= 0 && headerIndex < symbolCount && symbolTable[headerIndex].kind == FUNCTION);
@@ -316,7 +316,7 @@ int userReturn(int returnIndex) { // return, result, ,
     QUADCODE &cur = codeList[codeCount];
     strcpy(cur.op, "return");
     if(returnIndex >= 0) {
-        assert(returnIndex < symbolCount && isVariable(returnIndex));
+        assert(returnIndex < symbolCount && hasValue(returnIndex));
         strcpy(cur.lft, symbolTable[returnIndex].name);
     } else {
         strcpy(cur.lft, "");

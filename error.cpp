@@ -44,10 +44,12 @@ const char *errMsg[] = {
     "mismatched parameters",
     "return expression of void function",
     "return no expression of non-void function",
+    "unknown type to get its value",
+    "duplicated case",
     NULL
 };
 void addError(int index) {
-    if(index >= 1 && index <= 41) {
+    if(index >= 1 && index <= 42) {
         printf("Error (Line %d, Column %d): %s\n", currentFrontLineIndex, currentFrontColumnIndex, errMsg[index]);
 #ifdef ERROR_DEBUG
         fprintf(ferr, "Error (Line %d, Column %d): %s\n", currentFrontLineIndex, currentFrontColumnIndex, errMsg[index]);
