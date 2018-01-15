@@ -24,7 +24,7 @@ void readStatement();
 void writeStatement();
 void caseStatement();
 void caseTable(int expIndex, int);
-void caseSubstatement(int expIndex, int, int);
+void caseSubstatement(int expIndex, int, int, set<int> &);
 void defaultSubstatement();
 void returnStatement();
 
@@ -58,7 +58,7 @@ void skipSymbol(SKIP type) {
         }
         case NTYPST: { // before next type or statement
             while(symbol != NOTSY && symbol != INTSY && symbol != CHARSY && symbol != VOIDSY
-                && symbol != IFSY && symbol != FORSY && symbol != BEGINSY && symbol != IDSY
+                && symbol != IFSY && symbol != FORSY && symbol != BEGINSY && symbol != IDSY && symbol != MAINSY
                 && symbol != READSY && symbol != WRITESY && symbol != SEMISY && symbol != SWITCHSY && symbol != RETURNSY)
                 getSymbol();
             break;
@@ -148,14 +148,17 @@ functDef:
         lastEndLineIndexInner = lastEndLineIndex;
         lastEndColumnIndexInner = lastEndColumnIndex;
     }
-    skipSymbol(NTYP);
-    if(symbol == INTSY || symbol == CHARSY || symbol == VOIDSY)
-        goto varOrFunctDef;
+    if(symbol != NOTSY) {
+        skipSymbol(NTYP);
+        if(symbol == INTSY || symbol == CHARSY || symbol == VOIDSY) {
+            goto varOrFunctDef;
+        } else if(hasMainFunction) { // invalid: extra code after main function
+            addError(34);
+        }
+    }
     if(!hasMainFunction)
         addError(26);
     // code ending
-    if(symbol != NOTSY) // invalid: extra code
-        addError(34);
     setLabel(globalEndLabel);
     // feedback to reviseCodeIndex: j globalEndLabel -> call main
     strcpy(codeList[reviseCodeIndex].op, "call");
@@ -293,7 +296,7 @@ void constantDefinition() {
     typeSymbol = symbol;
     do {
         getSymbol(); // read typeSymbol or COMMA
-        if(symbol != IDSY) {
+        if(symbol != IDSY && symbol != MAINSY) {
             addError(21);
             skipSymbol(NCS);
             continue;
@@ -373,7 +376,7 @@ void variableStatement() {
         int startLineIndexInner = currentFrontLineIndex, startColumnIndexInner = currentFrontColumnIndex;
         typeSymbol = symbol;
         getSymbol();
-        if(symbol != IDSY) {
+        if(symbol != IDSY && symbol != MAINSY) {
             addError(21);
             skipSymbol(NTYP);
             continue;
@@ -401,7 +404,7 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
 //    }
 //    typeSymbol = symbol;
 //    getSymbol();
-//    if(symbol != IDSY) {
+//    if(symbol != IDSY && symbol != MAINSY) {
 //        addError(21);
 //        skipSymbol(NTYP);
 //        return;
@@ -457,7 +460,7 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
     // parse others
     while(symbol == COMMASY) {
         getSymbol();
-        if(symbol != IDSY) {
+        if(symbol != IDSY && symbol != MAINSY) {
             addError(21);
             skipSymbol(NCS);
             continue;
@@ -521,7 +524,7 @@ void parameterTable() {
             if(symbol == INTSY || symbol == CHARSY) {
                 typeSymbol = symbol;
                 getSymbol();
-                if(symbol != IDSY) {
+                if(symbol != IDSY && symbol != MAINSY) {
                     addError(21);
                     skipSymbol(NCP);
                     continue;
@@ -574,7 +577,7 @@ void complexStatement() {
 void statementList() {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
     int stmtCount = 0;
-    while(symbol == IFSY || symbol == FORSY || symbol == BEGINSY || symbol == IDSY
+    while(symbol == IFSY || symbol == FORSY || symbol == BEGINSY || symbol == IDSY || symbol == MAINSY
     || symbol == READSY || symbol == WRITESY || symbol == SEMISY || symbol == SWITCHSY || symbol == RETURNSY) {
         statement();
         ++stmtCount;
@@ -603,7 +606,7 @@ void statement() {
                 getSymbol();
             }
             break;
-        } case IDSY : { // call statement or assign statement
+        } case IDSY : case MAINSY: { // call statement or assign statement
             strcpy(identifier, token);
             getSymbol();
             if(symbol != LPARSY && symbol != ASSIGNSY && symbol != LBRASY) {
@@ -801,7 +804,7 @@ int term() {
 int factor() {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
     int returnIndex = -1;
-    if(symbol == IDSY) { // identifier or call statement
+    if(symbol == IDSY || symbol == MAINSY) { // identifier or call statement
         strcpy(identifier, token);
         getSymbol();
         if(symbol == LPARSY) { // call statement
@@ -900,7 +903,7 @@ int factor() {
 // <identifier> are already read (in static)
 int callStatementModified(int startLineIndex, int startColumnIndex) {
 //    int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
-//    if(symbol != IDSY) { // should never be reached
+//    if(symbol != IDSY && symbol != MAINSY) { // should never be reached
 //        addError(0);
 //        return;
 //    }
@@ -943,11 +946,11 @@ int valueParameterTable(int calleeIndex) {
         while(true) {
             int tempIndex = expression();
             ++parameterCount;
-            if(calleeIndex != -1 && tempIndex != -1 && symbolTable[tempIndex].type != symbolTable[calleeIndex + parameterCount].type) {
-                addWarning(symbolTable[tempIndex].type == INT ? 10 : 11);
-            }
-            if(calleeIndex != -1 && tempIndex != -1)
+            if(calleeIndex != -1 && tempIndex != -1) {
+                if(symbolTable[tempIndex].type != symbolTable[calleeIndex + parameterCount].type)
+                    addWarning(symbolTable[tempIndex].type == INT ? 10 : 11);
                 formatterTemporarySymbol(tempIndex, symbolTable[calleeIndex + parameterCount].type);
+            }
             if(tempIndex != -1)
                 pushParameter(tempIndex);
             if(symbol != COMMASY)
@@ -990,7 +993,7 @@ void forStatement() {
     } else {
         getSymbol();
     }
-    if(symbol != IDSY) {
+    if(symbol != IDSY && symbol != MAINSY) {
         addError(21);
         skipSymbol(NSP);
     }
@@ -1035,7 +1038,7 @@ void forStatement() {
         getSymbol();
     }
     setLabel(loopIterationLabel);
-    if(symbol != IDSY) {
+    if(symbol != IDSY && symbol != MAINSY) {
         addError(21);
         skipSymbol(NSP);
     } else {
@@ -1047,7 +1050,7 @@ void forStatement() {
             skipSymbol(NSP);
         } else {
             getSymbol();
-            if(symbol != IDSY) {
+            if(symbol != IDSY && symbol != MAINSY) {
                 addError(21);
                 skipSymbol(NSP);
             } else {
@@ -1102,7 +1105,7 @@ void forStatement() {
 // <identifier> are already read
 void assignStatementModified(int startLineIndex, int startColumnIndex) {
 //    int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
-//    if(symbol != IDSY) { // should never be reached
+//    if(symbol != IDSY && symbol != MAINSY) { // should never be reached
 //        addError(0);
 //        return;
 //    }
@@ -1143,10 +1146,9 @@ void assignStatementModified(int startLineIndex, int startColumnIndex) {
         getSymbol();
         rightIndex = expression();
     }
-    if(leftIndex != -1 && rightIndex != -1 && symbolTable[leftIndex].type == CHAR && symbolTable[rightIndex].type == INT) { // optional
-        addWarning(10);
-    }
     if(leftIndex != -1 && rightIndex != -1) {
+        if(symbolTable[leftIndex].type != symbolTable[rightIndex].type)
+            addWarning(symbolTable[rightIndex].type == INT ? 10 : 11);
         if(symbolTable[leftIndex].kind == ARRAY) {
             if(leftOffsetIndex != -1)
                 storeArrayElement(leftIndex, leftOffsetIndex, rightIndex);
@@ -1177,7 +1179,7 @@ void readStatement() {
     do {
         getSymbol(); // LPAR or COMMA
         int index;
-        if(symbol != IDSY) {
+        if(symbol != IDSY && symbol != MAINSY) {
             addError(21);
             skipSymbol(NCP);
             continue;
@@ -1311,16 +1313,17 @@ void caseStatement() {
 
 void caseTable(int expIndex, int switchEndLabel) {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
+    set<int> caseSet;
     int caseCount = 0;
     while(symbol == CASESY) {
-        caseSubstatement(expIndex, switchEndLabel, ++caseCount);
+        caseSubstatement(expIndex, switchEndLabel, ++caseCount, caseSet);
     }
 #ifdef SYNTAX_DEBUG
     fprintf(ferr, "There is a case table from (line %d, column %d) to (line %d, column %d)\n", startLineIndex, startColumnIndex, lastEndLineIndex, lastEndColumnIndex);
 #endif
 }
 
-void caseSubstatement(int expIndex, int switchEndLabel, int caseLabelIndex) {
+void caseSubstatement(int expIndex, int switchEndLabel, int caseLabelIndex, set<int> &caseSet) {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
     if(symbol != CASESY) { // should never be reached
         addError(0);
@@ -1328,9 +1331,11 @@ void caseSubstatement(int expIndex, int switchEndLabel, int caseLabelIndex) {
     } else {
         getSymbol();
     }
-    int caseIndex = -1, caseEndLabel = generateLabel(CASESY, 1, caseLabelIndex, switchEndLabel);
+    int caseIndex = -1, caseValue;
+    int caseEndLabel = generateLabel(CASESY, 1, caseLabelIndex, switchEndLabel);
     if(symbol == CHSY) {
-        caseIndex = generateTemporarySymbol(CHAR, token[0]);
+        caseValue = token[0];
+        caseIndex = generateTemporarySymbol(CHAR, caseValue);
         getSymbol();
     } else { // try to match as number
         int stage = 0;
@@ -1348,8 +1353,6 @@ void caseSubstatement(int expIndex, int switchEndLabel, int caseLabelIndex) {
             if(stage && !number) {
                 addWarning(4);
             }
-            caseIndex = generateTemporarySymbol(INT);
-            int caseValue;
             if(stage < 0) {
                 if(number > (unsigned)INT_MAX + 1) {
                     caseValue = INT_MIN;
@@ -1365,8 +1368,8 @@ void caseSubstatement(int expIndex, int switchEndLabel, int caseLabelIndex) {
                     caseValue = number;
                 }
             }
+            caseIndex = generateTemporarySymbol(INT, caseValue);
             getSymbol();
-            storeImmediate(caseIndex, caseValue);
         }
     }
     if(symbol != COLONSY) {
@@ -1376,6 +1379,11 @@ void caseSubstatement(int expIndex, int switchEndLabel, int caseLabelIndex) {
         getSymbol();
     }
     if(caseIndex != -1 && expIndex != -1) {
+        if(caseSet.count(caseValue)) {
+            addError(42);
+        } else {
+            caseSet.insert(caseValue);
+        }
         if(symbolTable[expIndex].type != symbolTable[caseIndex].type)
             addWarning(9);
         branchLabel(EQSY, expIndex, caseIndex, caseEndLabel);
