@@ -457,6 +457,10 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
     }
     if(index != -1)
         defineElement(index);
+    if(symbol == ASSIGNSY) {
+        addError(33);
+        skipSymbol(NCS);
+    }
     // parse others
     while(symbol == COMMASY) {
         getSymbol();
@@ -506,6 +510,10 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
         }
         if(index2 != -1)
             defineElement(index2);
+        if(symbol == ASSIGNSY) {
+            addError(33);
+            skipSymbol(NCS);
+        }
     }
 #ifdef SYNTAX_DEBUG
     fprintf(ferr, "There is a variable definition from (line %d, column %d) to (line %d, column %d)\n", startLineIndex, startColumnIndex, lastEndLineIndex, lastEndColumnIndex);
@@ -960,13 +968,14 @@ int valueParameterTable(int calleeIndex) {
             getSymbol();
         }
     }
-    if(calleeIndex == -1 || parameterCount != symbolTable[calleeIndex].value) {
-        addError(38);
-        // do nothing
-        return -1;
-    }
-    if(calleeIndex != -1)
+    if(calleeIndex != -1) {
+        if(parameterCount != symbolTable[calleeIndex].value) {
+            addError(38);
+            // do nothing
+            return -1;
+        }
         userCall(calleeIndex, returnIndex);
+    }
     // after callee finished, free (not real, just revoke) parameters (caller's temporary variable)
     while(parameterCount) {
         revokeTemporarySymbol(parameterBaseIndex + parameterCount);

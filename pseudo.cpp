@@ -574,7 +574,11 @@ void printCodeList() {
                     } else {
                         int value;
                         sscanf(cur.rht, "%d", &value);
-                        fprintf(ferr, "write '%c'", value);
+                        if(value != '\n') {
+                            fprintf(ferr, "write '%c'", value);
+                        } else {
+                            fprintf(ferr, "write endl");
+                        }
                     }
                     break;
                 }
