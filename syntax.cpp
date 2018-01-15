@@ -814,7 +814,7 @@ int factor() {
             }
             if(symbol == LBRASY) { // array
                 getSymbol();
-                if(symbol[index].kind != ARRAY) {
+                if(symbolTable[index].kind != ARRAY) {
                     addError(41);
                     index = -1;
                 }
@@ -995,24 +995,21 @@ void forStatement() {
         skipSymbol(NSP);
     }
     int index = findSymbol(token);
-    bool extraVariable = false;
     if(index == -1) {
         addError(31);
         // do nothing
-        extraVariable = true; // allocate a temporarily variable to replace
-        index = generateTemporarySymbol(INT, 0);
     } else {
-        if(!isVariable())
+        if(!isVariable(index))
             addError(33);
         getSymbol();
-    } // now, index != -1
+    }
     if(symbol != ASSIGNSY) {
         addError(17);
         skipSymbol(NSP);
     } else {
         getSymbol();
         int initIndex = expression();
-        if(initIndex != -1 && isVariable(index))
+        if(index != -1 && initIndex != -1 && isVariable(index))
             arithmeticOpeation(ASSIGNSY, initIndex, -1, index);
         revokeTemporarySymbol(initIndex);
         jumpLabel(loopBlockLabel);
@@ -1042,7 +1039,7 @@ void forStatement() {
         addError(21);
         skipSymbol(NSP);
     } else {
-        if(findSymbol(token) != index)
+        if(index != -1 && findSymbol(token) != index)
             addError(24);
         getSymbol();
         if(symbol != ASSIGNSY) {
@@ -1054,7 +1051,7 @@ void forStatement() {
                 addError(21);
                 skipSymbol(NSP);
             } else {
-                if(findSymbol(token) != index)
+                if(index != -1 && findSymbol(token) != index)
                     addError(24);
                 getSymbol();
                 if(symbol != PLUSSY && symbol != MINUSSY) {
@@ -1072,7 +1069,7 @@ void forStatement() {
                                 addWarning(5);
                         }
                         int tempIndex = generateTemporarySymbol(INT, number < (unsigned)INT_MAX ? number : INT_MAX);
-                        if(isVariable(index)) {
+                        if(index != -1 && isVariable(index)) {
                             if(typeSymbol == PLUSSY) {
                                 arithmeticOpeation(PLUSSY, index, tempIndex, index);
                             } else { // MINUSSY
@@ -1097,9 +1094,6 @@ void forStatement() {
     statement();
     jumpLabel(loopIterationLabel);
     setLabel(loopEndLabel);
-    if(extraVariable) { // free loop variable and further temporarily variables
-        revokeTemporarySymbol(index);
-    }
 #ifdef SYNTAX_DEBUG
     fprintf(ferr, "There is a for statement from (line %d, column %d) to (line %d, column %d)\n", startLineIndex, startColumnIndex, lastEndLineIndex, lastEndColumnIndex);
 #endif
@@ -1192,7 +1186,7 @@ void readStatement() {
         if(index == -1) {
             addError(31);
             // do nothing
-        } else if(symbolTable[index].kind != VARIABLE && symbolTable[index].kind != PARAMETER) {
+        } else if(!isVariable(index)) {
             addError(33);
             // do nothing
         }

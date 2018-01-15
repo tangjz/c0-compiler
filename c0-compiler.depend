@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1515981452 source:c:\users\tangjz2\desktop\c0-compiler\error.cpp
+1516041456 source:c:\users\tangjz2\desktop\c0-compiler\error.cpp
 	"error.h"
 
 1515892441 c:\users\tangjz2\desktop\c0-compiler\error.h
@@ -57,7 +57,7 @@
 	"optimize.h"
 	"error.h"
 
-1515980651 source:c:\users\tangjz2\desktop\c0-compiler\pseudo.cpp
+1516041456 source:c:\users\tangjz2\desktop\c0-compiler\pseudo.cpp
 	"pseudo.h"
 
 1515982095 source:c:\users\tangjz2\desktop\c0-compiler\transform.cpp
