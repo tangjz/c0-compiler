@@ -428,13 +428,16 @@ static bool isLetter(char ch) {
 	return ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
 }
 void printCodeList() {
+    fprintf(ferr, "========== QUAD CODE BEGIN ==========\n");
     for(int index = 0; index < codeCount; ++index) {
         QUADCODE &cur = codeList[index];
-        fprintf(ferr, "#%d: ", index);
+//        fprintf(ferr, "#%d: ", index);
         if(strncmp(cur.op, "def", 3) == 0) { // def kind, type, value, name
             switch(cur.op[3]) {
                 case 'C': {
-#ifndef CONSTANT_EXPRESS
+#ifdef CONSTANT_EXPRESS
+                    goto afterEndl;
+#else
                     switch(cur.lft[0]) {
                         case 'i': {
                             fprintf(ferr, "const %s %s = %s", cur.lft, cur.dst, cur.rht);
@@ -516,6 +519,8 @@ void printCodeList() {
             fprintf(ferr, "%s[%s] = %s", cur.dst, cur.rht, cur.lft);
         } else if(strcmp(cur.op, "label") == 0) { // label, labelString, ,
             fprintf(ferr, "%s:", cur.lft);
+            while(index + 1 < codeCount && strcmp(codeList[index + 1].op, "label") == 0)
+                fprintf(ferr, "\t" "%s:", codeList[++index].lft);
         } else if(strncmp(cur.op, "j", 1) == 0) { // j, , , labelString
             fprintf(ferr, "GOTO %s", cur.dst);
         } else if(strncmp(cur.op, "b", 1) == 0) { // bne/beq/bge/bgt/ble/blt, left, right, labelString
@@ -593,10 +598,14 @@ void printCodeList() {
             if(cur.dst[0])
                 fprintf(ferr, "%s = RET", cur.dst);
         } else if(strcmp(cur.op, "return") == 0) { // return, result, ,
-            fprintf(ferr, "ret %s", cur.lft);
+            fprintf(ferr, "RET %s", cur.lft);
         } else {
             assert(false);
         }
         fprintf(ferr, "\n");
+afterEndl:
+        if(index + 1 < codeCount && strcmp(codeList[index + 1].op, "label") == 0)
+            fprintf(ferr, "\n");
     }
+    fprintf(ferr, "========== QUAD CODE END ==========\n\n");
 }

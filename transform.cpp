@@ -112,13 +112,13 @@ void printRegMem(const char *op, int rt, int rs, int offset) { // lb, lw, sb, sw
         lastRegMemOffset = offset;
 #endif
 }
-void printLabel(const char *label) { // label:
+void printLabel(const char *label, char endc) { // label:
     static char token[TOKEN_MAX];
     strcpy(token, label);
     for(char *ptr = token; *ptr; ++ptr)
         if(*ptr == '@')
             *ptr = '_';
-    fprintf(fout, "%s:" "\n", token);
+    fprintf(fout, "%s:" "%c", token, endc);
 }
 void printJump(const char *op, int rs) { // jr
     fprintf(fout, "\t" "%s %s" "\n", op, regName[rs]);
@@ -499,7 +499,13 @@ void convertMIPS() {
                 printRegMem(symbolTable[arrayIndex].type == INT ? "sw" : "sb", $rs, symbolTable[arrayIndex].isGlobal ? $gp : $sp, offset);
             }
         } else if(strcmp(cur.op, "label") == 0) { // label, labelString, ,
-            printLabel(cur.lft);
+            bool nxt = codeIndex + 1 < codeCount && strcmp(codeList[codeIndex + 1].op, "label") == 0;
+            printLabel(cur.lft, nxt ? '\t' : '\n');
+            while(nxt) {
+                ++codeIndex;
+                nxt = codeIndex + 1 < codeCount && strcmp(codeList[codeIndex + 1].op, "label") == 0;
+                printLabel(codeList[codeIndex].lft, nxt);
+            }
         } else if(strncmp(cur.op, "j", 1) == 0) { // j, , , labelString
             printJump(cur.op, cur.dst);
         } else if(strncmp(cur.op, "b", 1) == 0) { // bne/beq/bge/bgt/ble/blt, left, right, labelString

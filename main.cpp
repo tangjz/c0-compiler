@@ -55,14 +55,17 @@ int main() {
         return -1;
     }
     puts("Complication Finished.");
+#ifdef QUADCODE_OUTPUT
+    printCodeList(); // print to fout
+#endif
 #ifdef OPTIMIZATION
     divideBlocks();
     #ifdef COMMON_SUBEXPRESSION_ELIMINATION
         commonSubexpressionElimination();
     #endif
-#endif
-#ifdef QUADCODE_OUTPUT
-    printCodeList(); // print to fout
+    #ifdef QUADCODE_OUTPUT
+        printCodeList(); // print to fout
+    #endif
 #endif
     convertMIPS();
     return 0;
