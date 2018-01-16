@@ -11,7 +11,7 @@ struct QUADCODE {
     // lft, rht may be identifier or number, dst must be identifier
 };
 
-extern int codeCount, labelCount;
+extern int codeCount, labelCount, codeTemp[CODE_MAX];
 extern QUADCODE codeList[CODE_MAX];
 extern char labelTable[TABLE_SIZE][TOKEN_MAX];
 

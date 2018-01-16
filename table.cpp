@@ -140,3 +140,13 @@ void formatterTemporarySymbol(int &index, TYPE type) {
         recalculateStoreSize(index);
     }
 }
+static bool isLetter(char ch) {
+	return ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+}
+int getTemporaryIndex(const char *token) { // 0 means not temporary
+    int pos = strlen(token), ret = 0;
+    for( ; pos && !isLetter(token[pos - 1]); --pos);
+    if(pos > 1 && token[pos - 2] == '@' && token[pos - 1] == 'T')
+        sscanf(token + pos, "%d", &ret);
+    return ret;
+}

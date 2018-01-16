@@ -31,5 +31,6 @@ extern int generateTemporarySymbol(TYPE type);
 extern int generateTemporarySymbol(TYPE type, int value); // with immediate
 extern void revokeTemporarySymbol(int index);
 extern void formatterTemporarySymbol(int &index, TYPE type);
+extern int getTemporaryIndex(const char *token);
 
 #endif // TABLE_H_INCLUDED

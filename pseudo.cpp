@@ -5,7 +5,7 @@
 //    // lft, rht may be identifier or number, dst must be identifier
 //};
 
-int codeCount = 0, labelCount = 0;
+int codeCount = 0, labelCount = 0, codeTemp[CODE_MAX];
 QUADCODE codeList[CODE_MAX];
 char labelTable[TABLE_SIZE][TOKEN_MAX];
 
@@ -117,6 +117,7 @@ int arithmeticOpeation(SYMBOL oper, int leftIndex, int rightIndex, int destinati
 #ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
+    codeTemp[codeCount] = temporaryCount;
     return codeCount++;
 }
 
@@ -143,6 +144,7 @@ int defineElement(int index) { // def kind, type, value, name
 #ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
+    codeTemp[codeCount] = temporaryCount;
     return codeCount++;
 }
 
@@ -158,6 +160,7 @@ int setLabel(int index) { // label, labelString, ,
 #ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
+    codeTemp[codeCount] = temporaryCount;
     return codeCount++;
 }
 
@@ -173,6 +176,7 @@ int jumpLabel(int index) { // j, , , labelString
 #ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
+    codeTemp[codeCount] = temporaryCount;
     return codeCount++;
 }
 
@@ -218,6 +222,7 @@ int branchLabel(SYMBOL oper, int leftIndex, int rightIndex, int falseLabelIndex)
 #ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
+    codeTemp[codeCount] = temporaryCount;
     return codeCount++;
 }
 
@@ -233,6 +238,7 @@ int startOfFunction(int functionIndex) { // function, name, type,
 #ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
+    codeTemp[codeCount] = temporaryCount;
     return codeCount++;
 }
 
@@ -248,6 +254,7 @@ int endOfFunction(int functionIndex) { // endFunction, name, type,
 #ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
+    codeTemp[codeCount] = temporaryCount;
     return codeCount++;
 }
 
@@ -287,6 +294,7 @@ int sysCall(int type, int src, int dst) { // syscall, serviceNumber, source, des
         fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
     }
 #endif
+    codeTemp[codeCount] = temporaryCount;
     return codeCount++;
 }
 
@@ -307,6 +315,7 @@ int userCall(int calleeIndex, int returnIndex) { // call, function, temporaryCou
 #ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
+    codeTemp[codeCount] = temporaryCount;
     return codeCount++;
 }
 
@@ -326,6 +335,7 @@ int userReturn(int returnIndex) { // return, result, ,
 #ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
+    codeTemp[codeCount] = temporaryCount;
     return codeCount++;
 }
 
@@ -340,6 +350,7 @@ int storeImmediate(int index, int value) { // =v, value, , variable
 #ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
+    codeTemp[codeCount] = temporaryCount;
     return codeCount++;
 }
 
@@ -373,6 +384,7 @@ int storeArrayElement(int arrayIndex, int offsetIndex, int sourceIndex) { // []=
 #ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
+    codeTemp[codeCount] = temporaryCount;
     return codeCount++;
 }
 
@@ -398,6 +410,7 @@ int loadArrayElement(int arrayIndex, int offsetIndex, int destinationIndex) { //
 #ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
+    codeTemp[codeCount] = temporaryCount;
     return codeCount++;
 }
 
@@ -421,6 +434,7 @@ int pushParameter(int index) { // pushPara, (type), name,
 #ifdef QUADCODE_DEBUG
     fprintf(ferr, "#%d: %s, %s, %s, %s\n", codeCount, cur.op, cur.lft, cur.rht, cur.dst);
 #endif
+    codeTemp[codeCount] = temporaryCount;
     return codeCount++;
 }
 

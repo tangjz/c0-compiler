@@ -29,7 +29,9 @@ void divideBlocks() { // with dead code elimination
         if(strcmp(cur.op, "label") == 0) {
             if(labelStartIndex[findLabel(cur.lft)] == i)
                 entIdx.insert(i);
-        } else if(strcmp(cur.op, "call") == 0 || strncmp(cur.op, "b", 1) == 0 || strncmp(cur.op, "j", 1) == 0) {
+        } else if(strcmp(cur.op, "pushPara") == 0 || strcmp(cur.op, "[]=") == 0
+            || strncmp(cur.op, "j", 1) == 0 || strncmp(cur.op, "b", 1) == 0
+            || strcmp(cur.op, "syscall") == 0 || strcmp(cur.op, "call") == 0 || strcmp(cur.op, "return") == 0) {
             entIdx.insert(i + 1);
         }
     }
@@ -41,7 +43,9 @@ void divideBlocks() { // with dead code elimination
         QUADCODE &cur = codeList[i];
         if(blkIdx < blockCount && i == blockStartIndex[blkIdx + 1])
             ++blkIdx;
-        if(strcmp(cur.op, "j") == 0) {
+        if(strcmp(cur.op, "pushPara") == 0 || strcmp(cur.op, "[]=") == 0 || strcmp(cur.op, "syscall") == 0) {
+            blockNext[blkIdx].push_back(blkIdx + 1);
+        } else if(strcmp(cur.op, "j") == 0) {
             int dstIdx = upper_bound(blockStartIndex, blockStartIndex + blockCount, labelStartIndex[findLabel(cur.dst)]) - blockStartIndex - 1;
             blockNext[blkIdx].push_back(dstIdx);
         } else if(strncmp(cur.op, "b", 1) == 0) {
@@ -84,8 +88,100 @@ void divideBlocks() { // with dead code elimination
 
 int newCodeCount;
 QUADCODE newCodeList[CODE_MAX];
+
+static bool isLetter(char ch) {
+	return ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+}
+
+void DAG(int startIndex, int length) { // refine codeList[startIndex : startIndex + length - 1]
+    int lowIndex = codeTemp[startIndex + length - 1];
+    memcpy(newCodeList + newCodeCount, codeList + startIndex, length * sizeof(QUADCODE));
+    map<string, int> lastIndex, curIndex;
+    for(int i = 0; i < length; ++i) {
+        QUADCODE &cur = newCodeList[newCodeCount + i];
+        if(strcmp(cur.op, "add") == 0 || strcmp(cur.op, "sub") == 0
+           || strcmp(cur.op, "add") == 0 || strcmp(cur.op, "sub") == 0
+           || strcmp(cur.op, "=") == 0 || strcmp(cur.op, "=[]") == 0) {
+               lastIndex[cur.dst] = i;
+        }
+    }
+    for(int i = 0; i < length; ++i) {
+        QUADCODE &cur = newCodeList[newCodeCount + i];
+        if(strcmp(cur.op, "add") == 0 || strcmp(cur.op, "sub") == 0
+           || strcmp(cur.op, "add") == 0 || strcmp(cur.op, "sub") == 0
+           || strcmp(cur.op, "=[]") == 0) {
+#ifdef CONSTANT_FOLDING_PROPAGAION
+            if(!isLetter(cur.lft[0]) && !isLetter(cur.rht[0])) {
+                int lft, rht, res = -1;
+                sscanf(cur.lft, "%d", &lft);
+                sscanf(cur.rht, "%d", &rht);
+                switch(cur.op[0]) {
+                    case 'a': {
+                        res = lft + rht;
+                        break;
+                    }
+                    case 's': {
+                        res = lft - rht;
+                        break;
+                    }
+                    case 'm': {
+                        res = lft * rht;
+                        break;
+                    }
+                    case 'd': {
+                        if(rht)
+                            res = lft / rht;
+                        break;
+                    }
+                    default: assert(false);
+                }
+                strcpy(cur.op, "=");
+                sprintf(cur.lft, "%d", res);
+                strcpy(cur.rht, "");
+            }
+#endif
+            if(strcmp(cur.dst, "=") != 0)
+                for(int j = i - 1; j >= 0; --j) {
+                    QUADCODE &pre = newCodeList[newCodeCount + j];
+                    if(strcmp(pre.dst, "") == 0 || curIndex[pre.dst] != j
+                        || strcmp(cur.op, pre.op) != 0 || strcmp(cur.lft, pre.lft) != 0 || strcmp(cur.rht, pre.rht) != 0)
+                        continue;
+                    strcpy(cur.op, "=");
+                    strcpy(cur.lft, pre.dst);
+                    strcpy(cur.rht, "");
+                    break;
+                }
+        }
+        if(strcmp(cur.op, "=") == 0) {
+            for(int j = i + 1; j < length; ++j) {
+                QUADCODE &nxt = newCodeList[newCodeCount + j];
+                if(strcmp(cur.dst, nxt.lft) == 0)
+                    strcpy(nxt.lft, cur.lft);
+                if(strcmp(cur.dst, nxt.rht) == 0)
+                    strcpy(nxt.rht, cur.lft);
+                if(strcmp(cur.dst, nxt.dst) == 0)
+                    break;
+            }
+            if(lastIndex[cur.dst] != i || getTemporaryIndex(cur.dst) > lowIndex) {
+                strcpy(cur.op, "");
+                strcpy(cur.lft, "");
+                strcpy(cur.rht, "");
+                strcpy(cur.dst, "");
+            }
+        }
+        if(strcmp(cur.dst, "") != 0)
+            curIndex[cur.dst] = i;
+    }
+    for(int i = 0, startIndex = newCodeCount; i < length; ++i) {
+        QUADCODE &cur = newCodeList[startIndex + i];
+        if(strcmp(cur.op, "") != 0)
+            newCodeList[newCodeCount++] = newCodeList[startIndex + i];
+    }
+}
 void commonSubexpressionElimination() { // with constant folding propagation
-    // TODO
+    newCodeCount = 0;
+    for(int i = 0; i < blockCount; ++i)
+        DAG(blockStartIndex[i], blockStartIndex[i + 1] - blockStartIndex[i]);
     codeCount = newCodeCount;
     memcpy(codeList, newCodeList, newCodeCount * sizeof(QUADCODE));
 }

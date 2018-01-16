@@ -6,7 +6,7 @@
 	"common.h"
 	"scanner.h"
 
-1516056535 c:\users\tangjz2\desktop\c0-compiler\common.h
+1516089667 c:\users\tangjz2\desktop\c0-compiler\common.h
 	<bits/stdc++.h>
 
 1516074764 source:c:\users\tangjz2\desktop\c0-compiler\main.cpp
@@ -36,15 +36,15 @@
 1516069137 source:c:\users\tangjz2\desktop\c0-compiler\syntax.cpp
 	"syntax.h"
 
-1516069272 source:c:\users\tangjz2\desktop\c0-compiler\table.cpp
+1516091043 source:c:\users\tangjz2\desktop\c0-compiler\table.cpp
 	"table.h"
 
-1515875428 c:\users\tangjz2\desktop\c0-compiler\table.h
+1516087908 c:\users\tangjz2\desktop\c0-compiler\table.h
 	"common.h"
 	"error.h"
 	"pseudo.h"
 
-1515965243 c:\users\tangjz2\desktop\c0-compiler\pseudo.h
+1516090907 c:\users\tangjz2\desktop\c0-compiler\pseudo.h
 	"common.h"
 	"table.h"
 	"scanner.h"
@@ -57,10 +57,10 @@
 	"optimize.h"
 	"error.h"
 
-1516074982 source:c:\users\tangjz2\desktop\c0-compiler\pseudo.cpp
+1516087466 source:c:\users\tangjz2\desktop\c0-compiler\pseudo.cpp
 	"pseudo.h"
 
-1516074552 source:c:\users\tangjz2\desktop\c0-compiler\transform.cpp
+1516087798 source:c:\users\tangjz2\desktop\c0-compiler\transform.cpp
 	"transfrom.h"
 
 1515981553 c:\users\tangjz2\desktop\c0-compiler\optimize.h
@@ -68,6 +68,6 @@
 	"table.h"
 	"pseudo.h"
 
-1515981626 source:c:\users\tangjz2\desktop\c0-compiler\optimize.cpp
+1516092244 source:c:\users\tangjz2\desktop\c0-compiler\optimize.cpp
 	"optimize.h"
 

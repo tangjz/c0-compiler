@@ -13,23 +13,25 @@ const char *regName[REG_MAX] = {
     "$t8", "$t9", "$k0", "$k1", "$gp", "$sp", "$fp", "$ra"};
 const int $zero = 0, $v0 = 2, $a0 = 4, $gp = 28, $sp = 29, $ra = 31;
 const int localRegLow = 8, localRegUpp = 25;
-int regReg[REG_MAX];
+int regRef[TABLE_SIZE];
 bool regAvailable[REG_MAX];
 
 //TODO: global register allocation should be implemented in here
-int newReg() {
-    for(int id = localRegLow; id <= localRegUpp; ++id)
+void newReg(int &id) {
+    if(id != -1)
+        return;
+    for(id = localRegLow; id <= localRegUpp; ++id)
         if(regAvailable[id]) {
             regAvailable[id] = false;
-            return id;
+            return;
         }
     assert(false);
-    return -1;
 }
-void freeReg(int id) {
+void freeReg(int &id) {
     if(id >= localRegLow && id <= localRegUpp) {
         assert(!regAvailable[id]);
         regAvailable[id] = true;
+        id = -1;
     }
 }
 
@@ -76,7 +78,8 @@ void printRegImm(const char *op, int rt, const char *label) { // la
 }
 void printRegImm(const char *op, int rt, int rs, int offset) { // addi, subi
     if(offset > OFFSET_MAX) {
-        int tp = newReg();
+        int tp = -1;
+        newReg(tp);
         printRegImm("li", tp, offset);
         printRegReg(op, rt, rs, tp);
         freeReg(tp);
@@ -97,7 +100,8 @@ void printRegMem(const char *op, int rt, int rs, int offset) { // lb, lw, sb, sw
         return;
 #endif
     if(offset > OFFSET_MAX) {
-        int tp = newReg();
+        int tp = -1;
+        newReg(tp);
         printRegImm("li", tp, offset);
         printRegReg("add", tp, rs, tp);
         fprintf(fout, "\t" "%s %s, 0(%s)" "\n", op, regName[rt], regName[tp]);
@@ -160,13 +164,6 @@ int stringCount, stringIndex[CODE_MAX];
 
 static bool isLetter(char ch) {
 	return ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
-}
-int getTemporaryIndex(const char *token) {
-    int pos = strlen(token), ret = 0;
-    for( ; pos && !isLetter(token[pos - 1]); --pos);
-    assert(pos > 1 && token[pos - 2] == '@' && token[pos - 1] == 'T');
-    sscanf(token + pos, "%d", &ret);
-    return ret;
 }
 
 void convertMIPS() {
@@ -268,9 +265,9 @@ void convertMIPS() {
         int index = -1, offset = 0, $rs = $zero, $rt = $zero, $rd = $zero;
         bool hasImmediate = false;
         if(strcmp(cur.op, "add") == 0 || strcmp(cur.op, "sub") == 0) { // add/sub, left, right, destination
-            $rd = newReg();
+            newReg($rd);
             if(isLetter(cur.lft[0]) && ((index = findSymbol(cur.lft)) == -1 || symbolTable[index].kind != CONST)) {
-                $rs = newReg();
+                newReg($rs);
                 if(index == -1) { // temporary variable
                     printRegMem("lw", $rs, $sp, -getTemporaryIndex(cur.lft) * BYTE_PER_INT);
                 } else {
@@ -286,12 +283,12 @@ void convertMIPS() {
                 if(!offset) {
                     $rs = $zero;
                 } else {
-                    $rs = newReg();
+                    newReg($rs);
                     printRegImm("li", $rs, offset);
                 }
             }
             if(isLetter(cur.rht[0]) && ((index = findSymbol(cur.rht)) == -1 || symbolTable[index].kind != CONST)) {
-                $rt = newReg();
+                newReg($rt);
                 if(index == -1) { // temporary variable
                     printRegMem("lw", $rt, $sp, -getTemporaryIndex(cur.rht) * BYTE_PER_INT);
                 } else {
@@ -320,7 +317,7 @@ void convertMIPS() {
             }
         } else if(strcmp(cur.op, "mult") == 0 || strcmp(cur.op, "div") == 0) { // mult/div, left, right, destination
             if(isLetter(cur.lft[0]) && ((index = findSymbol(cur.lft)) == -1 || symbolTable[index].kind != CONST)) {
-                $rs = newReg();
+                newReg($rs);
                 if(index == -1) { // temporary variable
                     printRegMem("lw", $rs, $sp, -getTemporaryIndex(cur.lft) * BYTE_PER_INT);
                 } else {
@@ -336,12 +333,12 @@ void convertMIPS() {
                 if(!offset) {
                     $rs = $zero;
                 } else {
-                    $rs = newReg();
+                    newReg($rs);
                     printRegImm("li", $rs, offset);
                 }
             }
             if(isLetter(cur.rht[0]) && ((index = findSymbol(cur.rht)) == -1 || symbolTable[index].kind != CONST)) {
-                $rt = newReg();
+                newReg($rt);
                 if(index == -1) { // temporary variable
                     printRegMem("lw", $rt, $sp, -getTemporaryIndex(cur.rht) * BYTE_PER_INT);
                 } else {
@@ -358,7 +355,7 @@ void convertMIPS() {
                 if(!offset) {
                     $rt = $zero;
                 } else {
-                    $rt = newReg();
+                    newReg($rt);
                     printRegImm("li", $rt, offset);
                 }
             }
@@ -372,7 +369,7 @@ void convertMIPS() {
                     printRegMem(symbolTable[index].type == INT ? "sw" : "sb", $zero, symbolTable[index].isGlobal ? $gp : $sp, symbolOffset[index]);
                 }
             } else {
-                $rd = newReg();
+                newReg($rd);
                 printRegReg(cur.op, $rs, $rt);
                 printReg("mflo", $rd);
                 if(index == -1) { // temporary variable
@@ -383,7 +380,7 @@ void convertMIPS() {
             }
         } else if(strcmp(cur.op, "=") == 0) { // =, source, , destination
             if(isLetter(cur.lft[0]) && ((index = findSymbol(cur.lft)) == -1 || symbolTable[index].kind != CONST)) {
-                $rs = newReg();
+                newReg($rs);
                 if(index == -1) { // temporary variable
                     printRegMem("lw", $rs, $sp, -getTemporaryIndex(cur.lft) * BYTE_PER_INT);
                 } else {
@@ -399,7 +396,7 @@ void convertMIPS() {
                 if(!offset) {
                     $rs = $zero;
                 } else {
-                    $rs = newReg();
+                    newReg($rs);
                     printRegImm("li", $rs, offset);
                 }
             }
@@ -412,17 +409,18 @@ void convertMIPS() {
         } else if(strcmp(cur.op, "=[]") == 0) { // =[], array, offset, destination
             int arrayIndex = findSymbol(cur.lft);
             assert(arrayIndex >= 0);
-            $rs = newReg();
+            newReg($rs);
             if(isLetter(cur.rht[0]) && ((index = findSymbol(cur.rht)) == -1 || symbolTable[index].kind != CONST)) {
                 printRegImm("add", $rs, symbolTable[arrayIndex].isGlobal ? $gp : $sp, symbolOffset[arrayIndex]);
-                $rt = newReg();
+                newReg($rt);
                 if(index == -1) { // temporary variable
                     printRegMem("lw", $rt, $sp, -getTemporaryIndex(cur.rht) * BYTE_PER_INT);
                 } else {
                     printRegMem(symbolTable[index].type == INT ? "lw" : "lb", $rt, symbolTable[index].isGlobal ? $gp : $sp, symbolOffset[index]);
                 }
                 if(symbolTable[arrayIndex].type == INT) {
-                    int $tp = newReg();
+                    int $tp = -1;
+                    newReg($tp);
                     printRegImm("li", $tp, BYTE_PER_INT);
                     printRegReg("mult", $rt, $tp);
                     freeReg($tp);
@@ -448,7 +446,7 @@ void convertMIPS() {
             }
         } else if(strcmp(cur.op, "[]=") == 0) { // []=, source, offset, array
             if(isLetter(cur.lft[0]) && ((index = findSymbol(cur.lft)) == -1 || symbolTable[index].kind != CONST)) {
-                $rs = newReg();
+                newReg($rs);
                 if(index == -1) { // temporary variable
                     printRegMem("lw", $rs, $sp, -getTemporaryIndex(cur.lft) * BYTE_PER_INT);
                 } else {
@@ -464,23 +462,24 @@ void convertMIPS() {
                 if(!offset) {
                     $rs = $zero;
                 } else {
-                    $rs = newReg();
+                    newReg($rs);
                     printRegImm("li", $rs, offset);
                 }
             }
             int arrayIndex = findSymbol(cur.dst);
             assert(arrayIndex >= 0);
             if(isLetter(cur.rht[0]) && ((index = findSymbol(cur.rht)) == -1 || symbolTable[index].kind != CONST)) {
-                $rd = newReg();
+                newReg($rd);
                 printRegImm("add", $rd, symbolTable[arrayIndex].isGlobal ? $gp : $sp, symbolOffset[arrayIndex]);
-                $rt = newReg();
+                newReg($rt);
                 if(index == -1) { // temporary variable
                     printRegMem("lw", $rt, $sp, -getTemporaryIndex(cur.rht) * BYTE_PER_INT);
                 } else {
                     printRegMem(symbolTable[index].type == INT ? "lw" : "lb", $rt, symbolTable[index].isGlobal ? $gp : $sp, symbolOffset[index]);
                 }
                 if(symbolTable[arrayIndex].type == INT) {
-                    int $tp = newReg();
+                    int $tp = -1;
+                    newReg($tp);
                     printRegImm("li", $tp, BYTE_PER_INT);
                     printRegReg("mult", $rt, $tp);
                     freeReg($tp);
@@ -510,7 +509,7 @@ void convertMIPS() {
             printJump(cur.op, cur.dst);
         } else if(strncmp(cur.op, "b", 1) == 0) { // bne/beq/bge/bgt/ble/blt, left, right, labelString
             if(isLetter(cur.lft[0]) && ((index = findSymbol(cur.lft)) == -1 || symbolTable[index].kind != CONST)) {
-                $rs = newReg();
+                newReg($rs);
                 if(index == -1) { // temporary variable
                     printRegMem("lw", $rs, $sp, -getTemporaryIndex(cur.lft) * BYTE_PER_INT);
                 } else {
@@ -526,12 +525,12 @@ void convertMIPS() {
                 if(!offset) {
                     $rs = $zero;
                 } else {
-                    $rs = newReg();
+                    newReg($rs);
                     printRegImm("li", $rs, offset);
                 }
             }
             if(isLetter(cur.rht[0]) && ((index = findSymbol(cur.rht)) == -1 || symbolTable[index].kind != CONST)) {
-                $rt = newReg();
+                newReg($rt);
                 if(index == -1) { // temporary variable
                     printRegMem("lw", $rt, $sp, -getTemporaryIndex(cur.rht) * BYTE_PER_INT);
                 } else {
@@ -548,7 +547,7 @@ void convertMIPS() {
                 if(!offset) {
                     $rt = $zero;
                 } else {
-                    $rt = newReg();
+                    newReg($rt);
                     printRegImm("li", $rt, offset);
                 }
             }
