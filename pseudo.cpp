@@ -51,7 +51,7 @@ int generateLabel(SYMBOL type, int order, int typeIndex, int superLabel) {
             order == 2 ? "Iteration" :
             order == 3 ? "Block" : "End", typeIndex); break;
         case SWITCHSY: sprintf(cur, "%s@switch%d", symbolTable[headerIndex].name, typeIndex); break;
-        case CASESY: sprintf(cur, "%s@case%d", labelTable[superLabel], typeIndex); break;
+        case CASESY: sprintf(cur, "%s@caseEnd%d", labelTable[superLabel], typeIndex); break;
         default: assert(false);
     }
     assert(findLabel(cur) == -1);

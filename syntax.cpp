@@ -447,10 +447,6 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
         } else {
             getSymbol();
         }
-        // TODO optional: omit multi-dimension array definition
-        if(symbol == LBRASY) {
-            // match RBRASY and skip
-        }
     } else { // variable
         if(!fake) {
             index = insertSymbol(identifier, VARIABLE, varType, headerIndex == -1, 0);
@@ -483,7 +479,9 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
         getSymbol();
         if(symbol == LBRASY) { // array
             getSymbol();
-            if(symbol != NUMSY || !number) {
+            if(symbol != NUMSY) {
+                addError(20);
+            } else if(!number) {
                 addWarning(4);
             } else if(number > ARRAY_MAX) {
                 addWarning(6);
@@ -499,10 +497,6 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
                 // do nothing
             } else {
                 getSymbol();
-            }
-            // TODO optional: omit multi-dimension array definition
-            if(symbol == LBRASY) {
-                // match RBRASY and skip
             }
         } else {
             if(!fake) {
@@ -525,9 +519,11 @@ void variableDefinitionModified(int startLineIndex, int startColumnIndex) {
 
 void parameterTable() {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
-    if(symbol == INTSY || symbol == CHARSY) {
+    if(symbol == INTSY || symbol == CHARSY || symbol == IDSY || symbol == COMMASY) {
         if(headerIndex != -1 && strcmp(symbolTable[headerIndex].name, "main") == 0)
             addWarning(7);
+        if(symbol == COMMASY)
+            addError(21);
         do {
             if(symbol == COMMASY) {
                 getSymbol();
@@ -732,11 +728,17 @@ void ifStatement() {
 void condition(int elseLabel) {
     int startLineIndex = currentFrontLineIndex, startColumnIndex = currentFrontColumnIndex;
     int index = expression();
-    if(symbol >= EQSY && symbol <= GEQSY) { // relational operators
+    if(symbol == ASSIGNSY || (symbol >= EQSY && symbol <= GEQSY)) { // relational operators
         typeSymbol = symbol;
         getSymbol();
+        if(symbol == ASSIGNSY || (symbol >= EQSY && symbol <= ASSIGNSY)) {
+            getSymbol();
+            typeSymbol = ASSIGNSY;
+        }
         int index2 = expression();
-        if(index != -1 && index2 != -1)
+        if(typeSymbol == ASSIGNSY || index2 == -1)
+            addError(44);
+        else if(index != -1 && index2 != -1)
             branchLabel(typeSymbol, index, index2, elseLabel);
         revokeTemporarySymbol(index2);
     } else {
@@ -881,8 +883,16 @@ int factor() {
         }
         if(symbol != NUMSY) {
             addError(stage ? 20 : 44);
-            // do nothing
-            return -1;
+            if(symbol == LPARSY) { // maybe expression
+                int returnIndex = expression();
+                if(returnIndex != -1 && stage == -1) {
+                    formatterTemporarySymbol(returnIndex, INT);
+                    arithmeticOpeation(MINUSSY, -1, returnIndex, returnIndex);
+                }
+                return returnIndex;
+            } else {
+                return -1;
+            }
         } else if(stage && !number) {
             addWarning(4);
         }
@@ -959,8 +969,8 @@ int valueParameterTable(int calleeIndex) {
         while(true) {
             int tempIndex = expression();
             ++parameterCount;
-            if(calleeIndex != -1 && tempIndex != -1 && parameterCount <= symbolTable[calleeIndex].value) {
-                if(symbolTable[tempIndex].type != symbolTable[calleeIndex + parameterCount].type)
+            if(calleeIndex != -1 && parameterCount <= symbolTable[calleeIndex].value) {
+                if(tempIndex != -1 && symbolTable[tempIndex].type != symbolTable[calleeIndex + parameterCount].type)
                     addWarning(symbolTable[tempIndex].type == INT ? 10 : 11);
                 formatterTemporarySymbol(tempIndex, symbolTable[calleeIndex + parameterCount].type);
                 pushParameter(tempIndex);
@@ -977,11 +987,11 @@ int valueParameterTable(int calleeIndex) {
             return -1;
         }
         userCall(calleeIndex, returnIndex);
-    }
-    // after callee finished, free (not real, just revoke) parameters (caller's temporary variable)
-    while(parameterCount) {
-        revokeTemporarySymbol(parameterBaseIndex + parameterCount);
-        --parameterCount;
+        // after callee finished, free (not real, just revoke) parameters (caller's temporary variable)
+        while(parameterCount) {
+            revokeTemporarySymbol(parameterBaseIndex + parameterCount);
+            --parameterCount;
+        }
     }
 #ifdef SYNTAX_DEBUG
     fprintf(ferr, "There is a value parameter table from (line %d, column %d) to (line %d, column %d)\n", startLineIndex, startColumnIndex, lastEndLineIndex, lastEndColumnIndex);

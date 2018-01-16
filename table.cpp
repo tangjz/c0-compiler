@@ -121,17 +121,19 @@ void revokeTemporarySymbol(int index) {
     --temporaryCount;
 }
 void formatterTemporarySymbol(int &index, TYPE type) {
-    if(symbolTable[index].kind != TEMPORARY) {
+    if(index == -1 || symbolTable[index].kind != TEMPORARY) {
         int index2 = generateTemporarySymbol(type);
+        if(index != -1) {
 #ifdef CONSTANT_EXPRESS
-        if(symbolTable[index].kind == CONST) {
-            storeImmediate(index2, symbolTable[index].value);
-        } else {
+            if(symbolTable[index].kind == CONST) {
+                storeImmediate(index2, symbolTable[index].value);
+            } else {
 #endif
-            arithmeticOpeation(ASSIGNSY, index, -1, index2);
+                arithmeticOpeation(ASSIGNSY, index, -1, index2);
 #ifdef CONSTANT_EXPRESS
+            }
+#endif
         }
-#endif
         index = index2;
     } else if(symbolTable[index].type != type) {
         symbolTable[index].type = type;

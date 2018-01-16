@@ -34,17 +34,17 @@ const int BYTE_PER_CHAR = 1;
 // MARS -> Settings -> Popup dialog for input syscalls: ON
 // MARS -> Settings -> Delayed branching: OFF
 // MARS -> Settings -> Memory Configuration...: Default
-#define OUTPUT_EOLN
+// #define OUTPUT_EOLN
 #define CONSTANT_EXPRESS
 
 // switches for optimization
 #define OPTIMIZATION
 #ifdef OPTIMIZATION
-    #define COMMON_SUBEXPRESSION_ELIMINATION // compulsory
-    #define CONSTANT_FOLDING_PROPAGAION
+    // #define COMMON_SUBEXPRESSION_ELIMINATION // compulsory
+    // #define CONSTANT_FOLDING_PROPAGAION
     #define PEEPHOLE_OPTIMIZATION
     #define DEAD_CODE_ELIMINATION
-    #define GLOBAL_REGISTER_ALLOCATION // compulsory
+    // #define GLOBAL_REGISTER_ALLOCATION // compulsory
 #endif
 
 #endif // COMMON_H_INCLUDED
