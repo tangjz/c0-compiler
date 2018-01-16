@@ -13,7 +13,4 @@ extern void commonSubexpressionElimination(); // with constant folding propagati
 extern void activeVariableAnalysis(); // just initialization
 extern bool hasConfliction(int index1, int index2); // check for global/local variables (but not temporary)
 
-//TODO: global register allocation should be implemented in transform.cpp
-//TODO: peephole optimization also ...
-
 #endif // OPTIMIZE_H_INCLUDED

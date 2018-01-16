@@ -5,7 +5,7 @@ const char *pattern = "+-*/=,;:()[]{}";
 
 char buffer[BUF_SIZE];
 
-char ch = ' ', token[TOKEN_MAX] = {}, *tokenTail = token; // TODO: be careful when output '\\' in MARS
+char ch = ' ', token[TOKEN_MAX] = {}, *tokenTail = token;
 unsigned number = 0;
 enum SYMBOL symbol = NOTSY;
 int lineIndex = 0, columnIndex = 0, columnLimit = 0;
